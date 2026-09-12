@@ -14,6 +14,12 @@ import { Composer } from "./Composer";
 
 type Item = SseEvent | { event: "message"; data: { text: string } };
 type Selection = { hit: SearchHit; resultId: string };
+type HistoryItem = { id: string; title: string; items: Item[]; resultId: string | null; retry: Turn | null };
+
+function conversationTitle(text: string) {
+  const compact = text.replace(/\s+/g, " ").trim();
+  return compact.length > 56 ? `${compact.slice(0, 56).trimEnd()}…` : compact;
+}
 
 export function ChatStream({ role }: { role: ConversationRole }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -23,10 +29,12 @@ export function ChatStream({ role }: { role: ConversationRole }) {
   const [retry, setRetry] = useState<Turn | null>(null);
   const [resultId, setResultId] = useState<string | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [attempt, setAttempt] = useState(0);
   const inFlight = useRef(false);
   const controller = useRef<AbortController | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
+  const resultsAnchor = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (role !== "borrower") { setBusy(false); return; }
@@ -41,7 +49,50 @@ export function ChatStream({ role }: { role: ConversationRole }) {
     return () => { abort.abort(); controller.current?.abort(); };
   }, [role, attempt]);
 
-  useEffect(() => { const scroll = bottom.current; if (scroll) scroll.scrollTop = scroll.scrollHeight; }, [items, error]);
+  useEffect(() => {
+    if (!conversationId) return;
+    setHistory(entries => entries.map(entry => entry.id === conversationId
+      ? { ...entry, items, resultId, retry }
+      : entry));
+  }, [conversationId, items, resultId, retry]);
+
+  useEffect(() => {
+    const scroll = bottom.current;
+    if (!scroll) return;
+    const frame = requestAnimationFrame(() => {
+      const result = resultsAnchor.current;
+      if (result && resultId) {
+        const top = scroll.scrollTop + result.getBoundingClientRect().top - scroll.getBoundingClientRect().top - 24;
+        scroll.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        return;
+      }
+      scroll.scrollTo({ top: scroll.scrollHeight, behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [items, error, resultId]);
+
+  function startNewConversation() {
+    if (busy) return;
+    controller.current?.abort();
+    setConversationId(null);
+    setItems([]);
+    setError("");
+    setRetry(null);
+    setResultId(null);
+    setSelection(null);
+    setAttempt(value => value + 1);
+  }
+
+  function selectConversation(entry: HistoryItem) {
+    if (busy || entry.id === conversationId) return;
+    controller.current?.abort();
+    setConversationId(entry.id);
+    setItems(entry.items);
+    setResultId(entry.resultId);
+    setRetry(entry.retry);
+    setSelection(null);
+    setError("");
+  }
 
   async function send(payload: Turn) {
     if (!conversationId || inFlight.current) return;
@@ -53,6 +104,12 @@ export function ChatStream({ role }: { role: ConversationRole }) {
     setRetry(null);
     setSelection(null);
     if (payload.intent !== "book") setResultId(null);
+    if (payload.intent !== "book" && payload.text?.trim()) {
+      const title = conversationTitle(payload.text);
+      setHistory(entries => entries.some(entry => entry.id === conversationId)
+        ? entries
+        : [{ id: conversationId, title, items: [], resultId: null, retry: null }, ...entries]);
+    }
     setItems(previous => [...previous, { event: "message", data: {
       text: payload.intent === "book" ? `Confirm reservation: ${payload.garment_id}` : payload.text ?? "",
     } }]);
@@ -99,24 +156,39 @@ export function ChatStream({ role }: { role: ConversationRole }) {
   if (role !== "borrower") return <main className="page"><h1>Listing is not available yet</h1><Link href="/find">Find a garment</Link></main>;
   return (
     <main className="chat-shell"><div className="chat-workspace">
-      <aside className="conversation-history" aria-label="Conversation">
-        <p>Borrow a garment</p><p>A new conversation starts on refresh. Existing reservations remain held.</p>
-        <button type="button" onClick={() => window.location.assign("/find")}>New conversation</button>
+      <aside className="conversation-history" aria-label="Conversations">
+        <div className="conversation-history__heading">
+          <p className="conversation-history__title">Conversations</p>
+          <button aria-label="New conversation" className="new-conversation" disabled={busy} onClick={startNewConversation} title="New conversation" type="button">+</button>
+        </div>
+        {history.length > 0 && <section className="conversation-history__group">
+          <p>Today</p>
+          {history.map(entry => <button aria-current={entry.id === conversationId ? "page" : undefined}
+            className={`conversation-history__item${entry.id === conversationId ? " active" : ""}`}
+            disabled={busy} key={entry.id} onClick={() => selectConversation(entry)} type="button">{entry.title}</button>)}
+        </section>}
       </aside>
       <div className="chat-main">
         <header className="chat-header"><Link className="brand" href="/">MORE</Link><span>Occasion wear</span></header>
         <div className="chat-scroll" ref={bottom}><div className="page chat">
           <section className="messages" aria-label="Conversation">
             {items.length === 0 && <section className="empty-state">
-              <h1>What is the occasion?</h1><p>Tell me your city, wear date and EU size. Confirm a garment to reserve it without payment.</p>
-              <div className="starters"><button disabled={busy || !conversationId} onClick={() => send({ text: "我周五要参加晚宴" })}>我周五要参加晚宴</button>
-                <button disabled={busy || !conversationId} onClick={() => send({ text: "汉堡，EU 38" })}>汉堡，EU 38</button></div>
-              <p>Demo: server date 16 Sep 2026 → Friday 18 Sep 2026. Use a fresh demo state for the initial catalogue.</p>
+              <h1>What is the occasion?</h1><p>Tell me the event, city, date and your usual size. I will only show garments that can arrive in time.</p>
+              <div className="starters">
+                {[
+                  "I have a gala this Friday",
+                  "I'm attending a wedding in Sicily this September",
+                  "I need a chic dress for a birthday dinner",
+                  "I have a black-tie event next weekend",
+                  "I'm going to a christening next month",
+                  "I need something for a summer party",
+                ].map((prompt) => <button disabled={busy || !conversationId} key={prompt} onClick={() => send({ text: prompt })}>{prompt}</button>)}
+              </div>
             </section>}
             {items.map((item, index) => {
               if (item.event === "message" || item.event === "token") return <p key={index} className={`message message--${item.event === "message" ? "borrower" : "assistant"}`}>{item.data.text}</p>;
               if (item.event === "question") return <AgentQuestion disabled={busy} key={index} question={item} onReply={text => send({ text })} />;
-              if (item.event === "results") return <div key={index}>
+              if (item.event === "results") return <div key={index} ref={item.data.result_id === resultId ? resultsAnchor : undefined}>
                 {!item.data.hits.length && <p role="status">No garments available. Try another wear date, city or size.</p>}
                 {item.data.result_id !== resultId && <p>Previous results — search again for current availability.</p>}
                 <ResultGrid hits={item.data.hits} relaxed={item.data.relaxed ?? null} disabled={busy || item.data.result_id !== resultId}

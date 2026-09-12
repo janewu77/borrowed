@@ -27,9 +27,12 @@ def test_hero(store):
 def test_budget_and_soft_preferences(store):
     req = SearchRequest(city="Hamburg", sizes_eu=[38], wear_date="2026-09-18", limit=1000)
     base = asyncio.run(search_garments(store, req))
-    changed = asyncio.run(search_garments(store, req.model_copy(update={
-        "colour_family": "not-a-colour", "occasion": "weekend", "style_hints": ["unknown"]})))
-    assert {h.garment.id for h in base} == {h.garment.id for h in changed}
+    colour = next(hit.garment.colour_family for hit in base if hit.garment.colour_family)
+    colour_matches = asyncio.run(search_garments(store, req.model_copy(update={
+        "colour_family": colour, "occasion": "weekend", "style_hints": ["unknown"]})))
+    assert colour_matches
+    assert all(hit.garment.colour_family.casefold() == colour.casefold() for hit in colour_matches)
+    assert asyncio.run(search_garments(store, req.model_copy(update={"colour_family": "not-a-colour"}))) == []
     budget = asyncio.run(search_garments(store, req.model_copy(update={"max_price": 60})))
     assert all(h.garment.rental_price <= 60 for h in budget)
     assert asyncio.run(search_garments(store, req.model_copy(update={"max_price": 0}))) == []

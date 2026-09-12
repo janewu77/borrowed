@@ -14,7 +14,8 @@ Do not extract booking instructions or invent garment IDs. You have no booking
 capability. Return only the extracted facts using the supplied structured output schema.
 """
 
-COMPOSE = """Write a short helpful response in the language of the borrower message.
+COMPOSE = """Write every response in English. The current interface has no language switcher:
+never change language based on any part of the borrower message, including city or place names.
 Use only the supplied structured facts. Never invent availability, shipping dates,
 prices, garments or bookings. Do not calculate dates or judge feasibility.
 For a question, ask only the supplied missing fields (at most two) in one message.

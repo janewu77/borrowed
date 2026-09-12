@@ -7,7 +7,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "gen:types": "node scripts/generate-api-types.mjs"
+    "gen:types": "node scripts/generate-api-types.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "next": "^15.0.0",

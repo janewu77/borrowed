@@ -2,42 +2,24 @@
 
 当前前端是 Next.js 15 + React 19，使用 **GitHub + Railpack** 部署。无需 Dockerfile。前端新建一个 Railway 服务，与后端分别构建和运行。
 
-核对日期：2026-09-12。本文已重新核对当前源码和 Railway / Railpack / Next.js 官方文档。本地依赖安装、类型检查和生产构建均已通过；尚未执行 Railway 发布或浏览器联调。部署配置与当前代码一致，但业务接口仍有下文列出的不匹配。
+更新日期：2026-09-12。本次根据阶段 3 源码与本地验收记录同步功能状态；沿用原部署配置，未重新验证 Railway 平台配置或执行云端发布。文档入口见 [README](README.md)，本地演示见 [阶段 3 使用说明](../backend/docs/stage3-usage-zh.md)。
 
 ## 0. 当前源码状态与功能边界
 
-**此前缺失的 `frontend/lib/` 已恢复，并已被 Git 跟踪。** 当前包含：
+部署分支需要包含 `frontend/lib/` 下的 API、日期、原因、SSE 实现，以及 `api-types.ts` 和生成文件 `openapi.generated.ts`。提交前检查 `git status`，不要把本地存在等同于已推送。
 
-```text
-frontend/lib/api.ts
-frontend/lib/api-types.ts
-frontend/lib/dates.ts
-frontend/lib/reasons.ts
-frontend/lib/sse.ts
-```
+`npm run gen:types` 从 `backend/scripts/export_contract.py` 导出的 Pydantic HTTP/SSE 模型生成 `lib/openapi.generated.ts`；`api-types.ts` 引用这些类型。生成需要本地后端 Python 环境，不需要启动服务。Railway 的 `/frontend` 构建使用已提交的生成文件，不在构建时执行跨目录生成。
 
-仓库根目录 `.gitignore` 已有以下例外，无需重复添加：
-
-```gitignore
-!frontend/lib/
-!frontend/lib/**
-```
-
-在 `borrowed` 仓库根目录运行 `git ls-files frontend/lib`，应能列出上述五个文件。Railway 使用的部署分支也必须包含这些文件。
-
-`npm run gen:types` 只会生成 `lib/openapi.generated.ts`，不能代替上述 API、日期和 SSE 实现。
-
-当前源码仍有以下业务接口不匹配，部署成功不会自动解决：
-
-| 功能 | 当前前后端行为 | 验收边界 |
+| 功能 | 当前行为 | 验收边界 |
 | --- | --- | --- |
-| 借衣文字对话 `/find` | 前端发送 `role=borrower`，后端支持创建对话和文字 SSE 请求 | 需要后端配置模型，并完成实际流式联调 |
-| 确认预约 | 前端发送自然语言 `Reserve ...` 和 `idempotency_key`；后端 `Turn` 禁止额外字段，且要求 `intent=book`、`garment_id`、`confirmed=true`、对应推荐的 `result_id`，确认请求不能带非空文字 | 当前确认请求会被校验拒绝；需保留 SSE `results.result_id` 并对齐确认协议后验收 |
-| 图片上传 | 前端允许附图，后端对话解析设置 `max_files=0` | 当前不支持图片消息，不能作为上线可用功能 |
-| 出借对话 `/list` | 前端发送 `role=lender`，后端只接受 `borrower` | 创建对话会返回 422；页面可打开不代表可用 |
-| 上架与出借人清单 | 前端调用 `/api/listings/{id}/publish` 和 `/api/lender/{id}/garments`，当前后端没有这些路由 | 当前无法完成上架或加载出借人清单 |
+| 借衣文字对话 `/find` | JSON 文字 turn，展示 SSE 追问、推荐、回复和错误 | 本地真实后端联调通过，使用固定模型；在线 OpenAI 和云端仍待验证 |
+| 确认预约 | Reserve 打开弹窗；Confirm reservation 提交 intent=book、garment_id、confirmed=true、result_id，不发送非空文字 | 仅 booking_claim 表示成功；本地双窗口一成功一冲突、刷新和后端重启后不可借已验证 |
+| 推荐失效和重试 | 新文字禁用旧推荐；确认失败可保留原请求重试，缺失 done 会报断流 | 后端负责幂等性；冲突后重新搜索，不自动改订 |
+| 图片上传 | borrower 图片入口已关闭，后端拒绝文件上传 | 未实现 |
+| 出借对话 `/list` | 显示尚未开放提示，不创建 lender 对话 | 未实现 |
+| 上架与出借人清单 | 后端没有对应路由，前端保留部分组件和清单页面代码 | 不作为可用功能演示 |
 
-对照源码：`frontend/components/chat/ChatStream.tsx`、`frontend/lib/api.ts`、`frontend/lib/api-types.ts`、`backend/src/borrowed_backend/api/conversations.py`、`backend/src/borrowed_backend/agents/state.py`、`backend/src/borrowed_backend/agents/borrower_graph.py`。以上为本地源码核对结果，线上后端版本仍需另行确认。
+刷新会新建对话，不恢复完整聊天记录；已预约数据保存在后端 JSON 快照中。具体证据见 [阶段 3 验收记录](../backend/docs/stage3-acceptance-zh.md)。本地验收不代表线上版本已更新。
 
 ## 1. 本地确认能构建
 
@@ -50,7 +32,7 @@ npm run typecheck
 npm run build
 ```
 
-本次本地验证：Node.js `v22.22.0`，锁定依赖中的 Next.js `15.5.25`；`npm ci --no-audit --no-fund`、`npm run typecheck`、`npm run build` 均退出成功。构建生成 `/`、`/find`、`/list`，并保留商品详情及出借人清单的动态服务端路由。首次沙箱内依赖安装失败，改为获准的沙箱外安装后通过；类型检查和构建在沙箱内完成。此结果不包含生产服务启动、真实后端请求、浏览器或 Railway 运行验证。
+阶段 3 验收记录中，类型检查、生产构建和 4 项 SSE 测试通过；浏览器真实后端联调及进程重启恢复通过。模型使用固定响应，未验证在线 OpenAI 或 Railway 部署。本次文档同步未重新运行这些检查。
 
 将前端源码、`package.json`、`package-lock.json`、`next.config.ts` 和 TypeScript 配置提交并推送到部署分支。无需提交 `node_modules` 或 `.next`。
 
@@ -97,12 +79,12 @@ API_ORIGIN=https://你的后端域名.up.railway.app
 浏览器 → 前端域名/images/... → API_ORIGIN/images/...
 ```
 
-代码中有一个默认后端地址，但建议明确设置变量，避免连接到错误环境。变量在首次构建前配置；修改 `API_ORIGIN` 后重新构建并部署，使构建产物里的 rewrites 更新。[Next.js rewrites](https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites)
+代码默认后端为 `http://127.0.0.1:8000`，仅用于本地开发。Railway 必须显式设置 `API_ORIGIN`，否则请求会指向前端容器自身的 8000 端口。变量在首次构建前配置；修改 `API_ORIGIN` 后重新构建并部署，使构建产物里的 rewrites 更新。[Next.js rewrites](https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites)
 
 已确认 `lib/api.ts` 的地址选择逻辑：
 
 - 浏览器端读取 `NEXT_PUBLIC_API_BASE`，未设置时使用空前缀，即同源 `/api/...` 和 `/images/...`。
-- 服务端页面读取 `API_ORIGIN`，未设置时使用代码中的默认后端 HTTPS 地址；商品详情和出借人页面使用这一逻辑。
+- 服务端页面读取 `API_ORIGIN`，未设置时使用`http://127.0.0.1:8000`；商品详情和出借人页面使用这一逻辑。
 - `next.config.ts` 使用 `API_ORIGIN` 配置同源代理，与服务端 API 默认后端地址一致。
 
 **按本文部署时，不要设置 `NEXT_PUBLIC_API_BASE`，已有非空值应删除。** 这样浏览器请求由 Next.js 同源转发，一般无需额外配置浏览器到后端的 CORS。若设置为后端域名，浏览器会绕过代理，必须另行处理 CORS；当前后端未配置 CORS 中间件。修改此公开变量后也需重新构建，因为 Next.js 会在构建时将其写入浏览器代码。[Next.js 环境变量说明](https://nextjs.org/docs/pages/guides/environment-variables)
@@ -140,19 +122,25 @@ curl --fail-with-body -sS "$BORROWED_FRONTEND_URL/api/garments/search" \
 
 再用浏览器验证：
 
-- 首页两个入口 `/find` 和 `/list` 可以打开；`/list` 当前创建对话会失败，仅检查页面路由。
+- 首页两个入口 `/find` 和 `/list` 可以打开；`/list` 当前显示尚未开放提示，不演示出借流程。
 - 搜索返回的 `/images/...` 图片经前端域名能加载。
 - `/find` 能创建对话，发送纯文字后看到流式回复，浏览器 Network 中请求没有 4xx/5xx；不能仅凭 HTTP 200 判断成功，还需检查 SSE 中是否有 `error` 事件。
 - 商品详情 `/garment/实际商品ID` 能展示，验证服务端 API 请求路径。
 
-后端必须配置 `OPENAI_API_KEY` 和 `OPENAI_MODEL` 才能验证模型对话；缺少配置时可能返回 HTTP 200 的 SSE 流，但其中包含 `LLM_NOT_CONFIGURED` 错误。纯文字对话通过也不代表预约、图片或出借流程通过，具体阻塞见第 0 节。预约协议修复后应使用演示数据验证完整预约和回执；这些操作会写入后端数据。
+后端必须配置 `OPENAI_API_KEY` 和 `OPENAI_MODEL` 才能验证真实模型对话；缺少配置时 HTTP 200 的 SSE 仍可能包含 `LLM_NOT_CONFIGURED`。使用演示数据继续验证：
+
+1. 两个标签页分别输入“我周五要参加晚宴”，再输入“汉堡，EU 38”，都先取得同一商品的推荐。
+2. 两边打开 Reserve 弹窗，再依次点击 Confirm reservation；第一边应收到 booking_claim，第二边应显示 BOOKING_CONFLICT。
+3. 刷新重新搜索，已预约商品不再出现；后端重部署保留同一 Volume，再验证仍不可借。
+
+这些确认会写入后端数据，不扣款。页面、健康检查或单次文字回复成功均不能代替上述验证。无凭据的固定脚本仅供本地复现，输入限制见 [阶段 3 使用说明](../backend/docs/stage3-usage-zh.md)。
 
 ## 常见问题
 
 | 错误或现象 | 检查与处理 |
 | --- | --- |
 | Railpack 不知道如何构建 | Root Directory 应为 `/frontend`，部署分支应包含 `package.json` |
-| `Module not found: ...lib/api` 等 | 当前本地已包含该模块；检查部署分支是否包含 `frontend/lib` 的五个已跟踪文件 |
+| `Module not found: ...lib/api` 等 | 当前本地已包含该模块；检查部署分支是否包含 `frontend/lib` 的实现文件及 `openapi.generated.ts` |
 | `npm ci` 报 lock 不匹配 | 本地同步 package.json 和 package-lock.json、验证构建后一起提交 |
 | 找不到 TypeScript 或构建工具 | 不要将依赖安装配置成忽略 devDependencies，构建需要它们 |
 | 启动时找不到 production build | Build Command 应执行 `npm run build`，不能只安装依赖 |
@@ -162,10 +150,11 @@ curl --fail-with-body -sS "$BORROWED_FRONTEND_URL/api/garments/search" \
 | API 404 | 核对后端已部署版本是否有该接口；API_ORIGIN 不应带 `/api` |
 | 商品详情请求失败 | 当前服务端已使用绝对地址；检查运行时 API_ORIGIN、后端状态和商品 ID |
 | 浏览器跨域错误 | 删除非空 NEXT_PUBLIC_API_BASE 后重新构建，恢复同源代理 |
-| `/list` 创建对话返回 422 | 当前后端不接受 lender 角色，需实现或对齐出借功能 |
-| 点击 Reserve 返回 422 | 当前确认请求不符合后端 Turn 协议，见第 0 节；调整 Railway 变量无法修复 |
-| 附图消息失败 | 当前后端禁止对话文件上传，需对齐图片支持 |
+| `/list` 提示尚未开放 | 当前只实现 borrower，属于预期行为 |
+| 确认预约返回 422 | 阶段 3 已对齐协议；检查部署版本和实际 JSON 是否包含确认字段且不带非空 text |
+| BOOKING_CONFLICT | 商品已被其他对话占用，重新搜索或调整日期 |
+| 页面仍有附图入口 | 核对是否部署旧前端；当前 borrower 已关闭上传入口 |
 | 对话 HTTP 200 但显示模型配置错误 | 检查 SSE error 内容以及后端 OPENAI_API_KEY / OPENAI_MODEL |
 | 流式回复迟迟不出现 | 分别检查浏览器流式请求、前端代理和后端日志；首页健康不能验证 SSE |
 
-本次复查确认源码缺失及忽略规则问题已解决，本地类型检查与生产构建通过。生产服务启动、云端发布和浏览器联调仍须分别验证；第 0 节中的业务接口不匹配解决前，不能将前端发布成功视为完整业务上线。
+本地阶段 3 已完成 borrower 浏览器联调；云端部署、真实模型调用及 Volume 跨部署恢复仍须按本文另行验证。

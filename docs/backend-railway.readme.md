@@ -1,8 +1,10 @@
-# Railway 部署指南：阶段 1–2
+# 后端 Railway 部署指南：支持 borrower 阶段 1–3
 
 当前后端使用 FastAPI、LangGraph 和 OpenAI Responses API，支持结构化搜索及 borrower 文字对话、明确确认预约和重启恢复。采用 **GitHub + Railpack** 自动构建，无需 Dockerfile，也无需先配置数据库。
 
-本指南包含 Railway 配置和云端验证步骤；本地运行见 [README-zh.md](README-zh.md)，完整对话协议见 [阶段 2 使用说明](docs/stage2-usage-zh.md)。
+本指南包含 Railway 配置和云端验证步骤；本地运行见 [README-zh.md](../backend/README-zh.md)，完整对话协议见 [阶段 2 使用说明](../backend/docs/stage2-usage-zh.md)。
+
+更新日期：2026-09-12。阶段 3 复用本后端并接通前端；页面启动与演示见 [阶段 3 使用说明](../backend/docs/stage3-usage-zh.md)，前端部署见 [前端 Railway 指南](frontend-railway.readme.md)。本次只同步文档，不代表线上服务已更新。
 
 ## 1. 把代码推送到 GitHub
 
@@ -48,7 +50,7 @@ RAILPACK_PYTHON_VERSION=3.12
 DEMO_DATE=2026-09-16
 STATE_DIR=/state
 OPENAI_API_KEY=替换为你的真实API Key
-OPENAI_MODEL=gpt-4.1-mini
+OPENAI_MODEL=替换为已验证且账户可用的模型ID
 LLM_TIMEOUT_S=25
 DEBUG=false
 ```
@@ -56,7 +58,7 @@ DEBUG=false
 | 参数 | 用途 |
 | --- | --- |
 | `OPENAI_API_KEY` | 后端请求 OpenAI 的凭据，只在 Railway Variables 中填写真实值 |
-| `OPENAI_MODEL` | 模型 ID，沿用本地演示的 `gpt-4.1-mini`；需账户可访问 |
+| `OPENAI_MODEL` | 选择支持当前 Responses 结构化输出接口的模型，并先在本地验证；没有代码默认值 |
 | `LLM_TIMEOUT_S` | 每次模型调用的超时秒数，默认 25，允许大于 0 且不超过 120 |
 | `DEBUG` | 默认 false，关闭对话状态调试接口 |
 
@@ -130,7 +132,7 @@ curl --fail-with-body -N "$BORROWED_API_URL/api/conversations/$BORROWED_CONVERSA
   -H 'Content-Type: application/json' -d '{"text":"汉堡，EU 38"}'
 ```
 
-应收到 `results`（可借商品、实际日期、`result_id`）、`token`（解释）和 `done`。`curl -N` 禁用客户端输出缓冲；后端等待期间每 15 秒无事件时发送 `: ping`。HTTP 200 或 done 只表示流正常结束，仍需检查是否含 error，不能据此判定模型调用或预约成功。
+应收到 `results`（可借商品、实际日期、`result_id`）、`token`（解释）和 `done`。`curl -N` 禁用客户端输出缓冲；后端等待期间每 15 秒无事件时发送 `: ping`。HTTP 200 表示流请求已开始，done 表示本轮结束，仍需检查是否含 error，不能据此判定模型调用或预约成功。
 
 目前只支持文字；即使所选模型支持视觉，当前 turn 接口也拒绝图片上传。
 
@@ -151,7 +153,7 @@ curl --fail-with-body -N "$BORROWED_API_URL/api/conversations/$BORROWED_CONVERSA
 
 恢复验证时不要先发新的文字消息：每个文字 turn 都会使旧 result_id 失效。确认请求不能同时带文字修改条件；需要改日期、城市或尺码时，先发文字获取新 results，再确认。两个对话竞争同一商品时，后确认者会收到 availability 与 BOOKING_CONFLICT，不会自动改订其他商品。
 
-也可继续使用阶段 1 的 `POST /api/bookings` 验证结构化预约；其完整字段见 [README-zh.md](README-zh.md)。
+也可继续使用阶段 1 的 `POST /api/bookings` 验证结构化预约；其完整字段见 [README-zh.md](../backend/README-zh.md)。
 
 ## 常见问题
 
@@ -171,7 +173,7 @@ curl --fail-with-body -N "$BORROWED_API_URL/api/conversations/$BORROWED_CONVERSA
 
 当前后端没有登录鉴权、支付或取消预约，适合先跑通 Hackathon 演示。
 
-本地阶段 2 的测试和真实 HTTP/SSE 冒烟记录见 [验收记录](docs/stage2-acceptance-zh.md)。该冒烟使用固定模型响应，不证明真实 OpenAI 效果。本文已核对当前源码以及 Railway 变量、启动命令和 Volume 文档；本次仅更新部署说明，未执行 Railway 云端构建、发布、在线模型调用或持久化验证。
+本地阶段 2 的测试和真实 HTTP/SSE 冒烟记录见 [验收记录](../backend/docs/stage2-acceptance-zh.md)。该冒烟使用固定模型响应，不证明真实 OpenAI 效果。阶段 3 的真实后端浏览器双窗口冲突、刷新和进程重启恢复已在本地通过，见 [阶段 3 验收记录](../backend/docs/stage3-acceptance-zh.md)，同样使用固定模型。此次文档更新沿用原部署配置，未重新验证 Railway 平台配置，未执行云端发布、在线模型调用或 Volume 跨部署恢复。
 
 参考：[Railpack Python](https://railpack.com/languages/python)、[Railway 启动命令](https://docs.railway.com/deployments/start-command)、[子目录部署](https://docs.railway.com/deployments/monorepo)、[持久化磁盘](https://docs.railway.com/volumes)。
 

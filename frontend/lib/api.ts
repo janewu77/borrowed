@@ -1,6 +1,6 @@
 import type { ConversationCreated, ConversationRole, Feasibility, GarmentPublic, SearchHit } from "./api-types";
 
-const productionApiOrigin = "https://borrowed-production-58eb.up.railway.app";
+const productionApiOrigin = "http://127.0.0.1:8000";
 const apiBase = (
   typeof window === "undefined"
     ? process.env.API_ORIGIN ?? productionApiOrigin

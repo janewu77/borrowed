@@ -216,3 +216,20 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- borrowed ---
+# Загрузки владелицы в рантайме: создаются во время демо, в репозиторий не идут.
+backend/images/user-*.jpg
+backend/images/user-*.jpeg
+backend/images/user-*.png
+# Собранный фронтенд: артефакт npm run build.
+backend/static/
+# Каталог и картинки каталога (backend/data/, backend/images/item-*.jpg)
+# КОММИТЯТСЯ — это источник истины для всех четверых. Не игнорировать.
+
+# --- borrowed ---
+node_modules/
+.idea/
+.venv/
+__pycache__/
+.env

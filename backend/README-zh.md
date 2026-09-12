@@ -1,11 +1,13 @@
-# borrowed backend — 阶段 1
+# borrowed backend — 阶段 1–2
 
-结构化搜索 → 提交预约 → 立即占用 → 重启恢复。Python 3.12，FastAPI、Pydantic v2，单进程内存字典与 JSON 快照。
+文字对话 → 补充日期、城市和尺码 → 搜索推荐 → 明确确认预约 → 立即占用 → 重启恢复。Python 3.12，FastAPI、Pydantic v2、LangGraph 和 OpenAI Responses API，单进程内存字典与 JSON 快照。
+
+阶段 1 的结构化搜索和预约接口仍然可用；完整对话示例见 [阶段 2 使用说明](docs/stage2-usage-zh.md)。
 
 ## 安装与启动
 
 ```bash
-cd borrowed/backend
+cd /Users/jingwu/hackathon-202609/borrowed/backend
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements.lock.txt
 PYTHONPATH=src .venv/bin/python -m borrowed_backend --demo-date 2026-09-16
@@ -34,9 +36,54 @@ conda activate env_borrowed
 DEMO_DATE=2026-09-16 python -m uvicorn borrowed_backend.main:create_app --factory --app-dir src --host 127.0.0.1 --port 8000 --workers 1
 ```
 
-可配置环境变量：`DEMO_DATE`、`CATALOG_PATH`、`STATE_DIR`、`IMAGES_DIR`。默认路径以 backend 目录为基准，不依赖启动时的工作目录。非 editable 安装时，应显式配置外部 catalog、图片和状态目录。
+可配置环境变量：`DEMO_DATE`、`CATALOG_PATH`、`STATE_DIR`、`IMAGES_DIR`、`OPENAI_API_KEY`、`OPENAI_MODEL`、`LLM_TIMEOUT_S`、`DEBUG`。默认路径以 backend 目录为基准，不依赖启动时的工作目录。非 editable 安装时，应显式配置外部 catalog、图片和状态目录。
 
-## 固定演示
+## 配置 OpenAI：OPENAI_API_KEY 和 OPENAI_MODEL
+
+这两个参数通过**启动服务的终端环境变量**传入，无需修改 Python 代码。
+
+| 参数 | 填写内容 |
+| --- | --- |
+| `OPENAI_API_KEY` | 在 OpenAI API 平台创建的 API Key |
+| `OPENAI_MODEL` | 模型 ID；下面用 `gpt-4.1-mini` 举例，该模型支持 Responses、结构化输出和流式响应。实际调用仍取决于账户访问权限 |
+
+Key 的创建方式见 [OpenAI 官方快速入门](https://developers.openai.com/api/docs/quickstart)，模型能力见 [GPT-4.1 Mini 官方说明](https://developers.openai.com/api/docs/models/gpt-4.1-mini)。
+
+在 macOS 终端执行以下命令，将 Key 占位符替换为真实值，然后在**同一个终端**启动服务。如果服务已经运行，先按 Ctrl+C 停止它：
+
+```bash
+cd /Users/jingwu/hackathon-202609/borrowed/backend
+export OPENAI_API_KEY='替换为你的真实API Key'
+export OPENAI_MODEL='gpt-4.1-mini'
+
+PYTHONPATH=src .venv/bin/python -m borrowed_backend --demo-date 2026-09-16
+```
+
+如果使用现有 Conda 环境，前两个 export 命令相同，启动方式改为：
+
+```bash
+conda activate env_borrowed
+PYTHONPATH=src python -m borrowed_backend --demo-date 2026-09-16
+```
+
+这些 export 只对当前终端及其启动的进程生效。关闭终端后需要重新设置；改变参数后需要重启服务。当前代码**不会自动读取 `.env` 文件**，因此仅创建 `.env` 并填写两个参数不会生效。不要将真实 Key 填入本 README 或提交到 Git。
+
+如需确认应用读到了参数，可以在启动前运行以下命令（不输出 Key 内容）：
+
+```bash
+PYTHONPATH=src .venv/bin/python - <<'PYCONFIG'
+from borrowed_backend.config import Settings
+settings = Settings()
+print("API key configured:", bool(settings.openai_api_key and settings.openai_api_key.get_secret_value()))
+print("Model:", settings.openai_model)
+PYCONFIG
+```
+
+使用 Conda 时将 `.venv/bin/python` 换成 `python`。这一步只验证配置读取，不验证 Key 有效性、账户额度或模型调用；真实对话验证按 [阶段 2 API 示例](docs/stage2-usage-zh.md) 执行。未配置参数时，对话返回 `LLM_NOT_CONFIGURED`；结构化搜索仍可用。
+
+可选参数 `LLM_TIMEOUT_S` 默认 25 秒，`DEBUG` 默认 false。模型 ID 没有硬编码默认值。
+
+## 阶段 1：结构化接口演示
 
 先查询健康状态和所有候选商品：
 
@@ -78,6 +125,8 @@ PY
 
 | 接口 | 请求与响应 |
 | --- | --- |
+| `POST /api/conversations` | 创建 borrower 对话，返回 conversation_id |
+| `POST /api/conversations/{id}/turn` | JSON 或文字表单；返回 SSE，支持补槽、推荐和显式确认预约 |
 | `GET /health` | `status`、`garments`、`bookings`（种子与运行期合计）、`today` |
 | `POST /api/garments/search` | 必填城市、穿着日；尺码数组默认空；返回 `SearchHit[]`，默认最多 20 条，`limit` 为 1–1000 |
 | `GET /api/garments/{id}` | 公共商品投影，排除来源链接及预约内部信息 |
@@ -98,7 +147,8 @@ PY
 - catalog 只读；运行预约保存到 `data/state/bookings.json`，版本为 1，含预约与用于幂等比较的结构化请求。
 - 每笔预约在锁内复检、更新内存、原子保存；写入失败恢复旧内存。损坏、不一致或重复的快照记录使启动失败，应检查并恢复备份，不能静默清空。
 - 仅提供本地开发与 Hackathon 单实例能力；本阶段没有身份认证、支付、取消预约、数据库、多进程协调或跨机器持久化。
-- 不包含阶段 2/3，也不包含 LLM、MCP、对话、页面、lender、上架、搭配或图片处理。
+- 阶段 2 已包含 OpenAI 对话、补槽、推荐解释、显式确认预约和对话快照。对话状态保存到 `data/state/conversations.json`。
+- 暂不包含阶段 3 页面、MCP、lender、上架、搭配、图片处理、模型重排或复杂条件放宽。
 - 代码注释及 docstring 使用英文。
 
 ## 验收与规格差异
@@ -118,6 +168,9 @@ PY
 ```bash
 .venv/bin/python -m pytest -q
 .venv/bin/python scripts/smoke_stage1.py
+.venv/bin/python scripts/smoke_stage2.py
 ```
 
-冒烟脚本使用临时状态目录，启动真实 HTTP 服务，发起 20 次并发预约、关闭并重启进程，再验证搜索和幂等恢复；退出时关闭服务并清理临时状态。实际结果见 `docs/stage1-acceptance.md`。
+冒烟脚本使用临时状态目录，启动真实 HTTP 服务，发起 20 次并发预约、关闭并重启进程，再验证搜索和幂等恢复；退出时关闭服务并清理临时状态。阶段 1 结果见 [阶段 1 验收记录](docs/stage1-acceptance-zh.md)。
+
+阶段 2 的测试与真实 HTTP/SSE 冒烟验证已通过，但冒烟脚本注入固定模型响应，没有调用真实 OpenAI 服务；在线模型效果需配置参数后验证。详见 [阶段 2 验收记录](docs/stage2-acceptance-zh.md)。

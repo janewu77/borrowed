@@ -5,22 +5,29 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from borrowed_backend.api.routes import router
+from borrowed_backend.api.conversations import router as conversations_router
+from borrowed_backend.agents.llm import BorrowerLLM, OpenAILLM
 from borrowed_backend.config import Settings
 from borrowed_backend.data.store import InMemoryStore
 from borrowed_backend.domain.errors import Conflict, IdempotencyConflict, NotFound, PersistenceFailure
 from borrowed_backend.tools import definitions as _definitions
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, *, borrower_llm: BorrowerLLM | None = None) -> FastAPI:
     settings = settings or Settings()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.store = InMemoryStore(settings)
-        yield
+        app.state.borrower_llm = borrower_llm or OpenAILLM(settings)
+        try:
+            yield
+        finally:
+            await app.state.borrower_llm.close()
 
-    app = FastAPI(title="borrowed — stage 1", lifespan=lifespan)
+    app = FastAPI(title="borrowed — stage 2", lifespan=lifespan)
     app.include_router(router)
+    app.include_router(conversations_router)
     app.mount("/images", StaticFiles(directory=settings.images_dir), name="images")
 
     @app.exception_handler(NotFound)

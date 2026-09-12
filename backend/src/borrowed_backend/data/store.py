@@ -3,6 +3,8 @@ from datetime import date, datetime, timedelta, timezone
 from uuid import uuid4
 
 from borrowed_backend.config import Settings
+from borrowed_backend.agents.state import BorrowerState, ConversationState
+from pydantic import TypeAdapter
 from borrowed_backend.domain.availability import check
 from borrowed_backend.domain.dates import compute_legs
 from borrowed_backend.domain.errors import Conflict, IdempotencyConflict, NotFound, PersistenceFailure
@@ -21,6 +23,16 @@ class InMemoryStore:
         self.lenders: dict[str, list[str]] = {}
         self.snapshot_path = settings.state_dir / "bookings.json"
         self._restore()
+        self.conversations: dict[str, ConversationState] = {}
+        self.conversation_locks: dict[str, asyncio.Lock] = {}
+        self.conversation_path = settings.state_dir / "conversations.json"
+        if self.conversation_path.exists():
+            restored = TypeAdapter(list[ConversationState]).validate_json(
+                self.conversation_path.read_text(encoding="utf-8"))
+            self.conversations = {item.conversation_id: item for item in restored}
+            if len(restored) != len(self.conversations):
+                raise ValueError("Duplicate conversation IDs")
+            self.conversation_locks = {key: asyncio.Lock() for key in self.conversations}
         for garment in self.garments.values():
             self.lenders.setdefault(garment.lender_id, []).append(garment.id)
 
@@ -116,3 +128,17 @@ class InMemoryStore:
                 self.reservations.pop(req.idempotency_key)
                 raise PersistenceFailure("Booking snapshot could not be saved") from exc
             return self._result(booking, garment, False)
+
+    async def save_conversation(self, conversation: ConversationState) -> None:
+        async with self._lock:
+            updated = {**self.conversations, conversation.conversation_id: conversation}
+            try:
+                write_atomic(self.conversation_path,
+                             [item.model_dump(mode="json") for item in updated.values()])
+            except Exception as exc:
+                raise PersistenceFailure("Conversation snapshot could not be saved") from exc
+            self.conversations = updated
+            self.conversation_locks.setdefault(conversation.conversation_id, asyncio.Lock())
+
+    async def checkpoint(self, conversation_id: str, state: BorrowerState) -> None:
+        await self.save_conversation(self.conversations[conversation_id].model_copy(update={"slots": state}))

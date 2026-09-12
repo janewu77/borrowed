@@ -1,6 +1,7 @@
 from datetime import date
 from pathlib import Path
 
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
@@ -12,3 +13,8 @@ class Settings(BaseSettings):
     catalog_path: Path = BACKEND_ROOT / "data/catalog.json"
     state_dir: Path = BACKEND_ROOT / "data/state"
     images_dir: Path = BACKEND_ROOT / "images"
+
+    openai_api_key: SecretStr | None = None
+    openai_model: str | None = None
+    llm_timeout_s: float = Field(default=25, gt=0, le=120)
+    debug: bool = False

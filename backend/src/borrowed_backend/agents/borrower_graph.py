@@ -1,0 +1,141 @@
+import asyncio
+from typing import Awaitable, Callable, TypedDict
+from uuid import uuid4
+
+from langgraph.graph import END, START, StateGraph
+
+from borrowed_backend.api.sse import Availability, BookingClaim, Error, Event, Question, Results, Token
+from borrowed_backend.data.store import InMemoryStore
+from borrowed_backend.domain.errors import Conflict
+from borrowed_backend.domain.models import CreateBookingIn
+from borrowed_backend.tools.registry import invoke
+from .llm import BorrowerLLM
+from .state import BorrowerState, Turn
+
+
+class GraphState(TypedDict):
+    state: BorrowerState
+
+
+class BorrowerGraph:
+    def __init__(self, store: InMemoryStore, llm: BorrowerLLM):
+        self.store = store
+        self.llm = llm
+
+    async def run(self, conversation_id: str, turn: Turn,
+                  emit: Callable[[Event], Awaitable[None]]) -> None:
+        store = self.store
+        timeout = store.settings.llm_timeout_s
+        hits = []
+
+        async def save(state: BorrowerState, node: str) -> GraphState:
+            state = state.model_copy(update={"last_node": node})
+            await store.checkpoint(conversation_id, state)
+            return {"state": state}
+
+        async def extract_slots(data: GraphState):
+            state = data["state"]
+            if state.result_id is not None:
+                state = (await save(state.model_copy(update={
+                    "result_ids": [], "result_id": None, "result_request": None,
+                }), "invalidate_results"))["state"]
+            async with asyncio.timeout(timeout):
+                extraction = await self.llm.extract({
+                    "text": turn.text, "today": store.today().isoformat(),
+                    "slots": state.slots.model_dump(mode="json"),
+                    "missing_fields": state.slots.missing()[:2],
+                })
+            slots = extraction.merge(state.slots, store.today())
+            changes = {"slots": slots}
+            if slots != state.slots:
+                changes.update(result_ids=[], result_id=None, result_request=None)
+            return await save(state.model_copy(update=changes), "extract_slots")
+
+        async def gate(data: GraphState):
+            return await save(data["state"], "gate")
+
+        async def ask_missing(data: GraphState):
+            state = data["state"]
+            fields = state.slots.missing()[:2]
+            # Emit a usable question even if the language service is unavailable.
+            labels = {"wear_date": "穿着日期（含年份） / wear date (with year)",
+                      "city": "城市 / city", "sizes_eu": "EU 尺码 / EU size"}
+            fallback = "请补充 / Please provide: " + ", ".join(labels[key] for key in fields)
+            chunks = []
+            try:
+                async with asyncio.timeout(timeout):
+                    async for chunk in self.llm.text_stream({"kind": "question", "text": turn.text,
+                                                             "fields": fields}):
+                        chunks.append(chunk)
+                message = "".join(chunks).strip() or fallback
+            except Exception:
+                message = fallback
+                await emit(Error(code="LLM_UNAVAILABLE", message="暂时无法生成回复，请按提示补充信息。"))
+            result = await save(state, "ask_missing")
+            await emit(Question(text=message, fields=fields))
+            return result
+
+        async def search(data: GraphState):
+            nonlocal hits
+            state = data["state"]
+            request = state.slots.search_request()
+            hits = await invoke("search_garments", store, request)
+            result_id = uuid4().hex
+            result = await save(state.model_copy(update={
+                "result_ids": [hit.garment.id for hit in hits],
+                "result_id": result_id, "result_request": request,
+            }), "search")
+            await emit(Results(hits=hits, result_id=result_id))
+            return result
+
+        async def compose(data: GraphState):
+            context = {"kind": "results" if hits else "no_results", "text": turn.text,
+                       "hits": [hit.model_dump(mode="json") for hit in hits[:3]]}
+            if not hits:
+                await emit(Token(text="没有符合当前条件的可借商品。可以修改日期、城市、EU 尺码或预算后继续搜索。"))
+            async with asyncio.timeout(timeout):
+                async for chunk in self.llm.text_stream(context):
+                    await emit(Token(text=chunk))
+            return await save(data["state"], "compose")
+
+        async def book(data: GraphState):
+            state = data["state"]
+            if (not turn.confirmed or not turn.garment_id or not turn.result_id
+                    or turn.result_id != state.result_id
+                    or turn.garment_id not in state.result_ids
+                    or state.result_request is None
+                    or state.slots.missing()
+                    or state.slots.search_request() != state.result_request):
+                await emit(Error(code="CONFIRMATION_REQUIRED", message=(
+                    "请先搜索，并明确确认推荐中的商品；提交 intent=book、garment_id、"
+                    "confirmed=true 和该次 results 的 result_id。预约会立即占用商品，不收取费用。")))
+                return await save(state, "book_rejected")
+            request = state.result_request
+            payload = CreateBookingIn(
+                garment_id=turn.garment_id, city=request.city, sizes_eu=request.sizes_eu,
+                wear_date=request.wear_date, return_date=request.return_date,
+                idempotency_key=f"conversation:{conversation_id}:{state.result_id}:{turn.garment_id}",
+            )
+            try:
+                booking = await invoke("create_booking", store, payload)
+            except Conflict as exc:
+                await emit(Availability(feasibility=exc.feasibility,
+                                        garment=store.get(turn.garment_id).public()))
+                await emit(Error(code="BOOKING_CONFLICT", message="该商品当前无法预约，请重新搜索或调整日期。"))
+                return await save(state, "book_conflict")
+            # The booking snapshot is already durable; report success before optional chat persistence.
+            await emit(BookingClaim(booking=booking))
+            return await save(state, "book")
+
+        builder = StateGraph(GraphState)
+        for name, handler in (("extract_slots", extract_slots), ("gate", gate),
+                              ("ask_missing", ask_missing), ("search", search),
+                              ("compose", compose), ("book", book)):
+            builder.add_node(name, handler)
+        builder.add_conditional_edges(START, lambda _: "book" if turn.intent == "book" else "extract_slots")
+        builder.add_edge("extract_slots", "gate")
+        builder.add_conditional_edges("gate", lambda data: "ask_missing" if data["state"].slots.missing() else "search")
+        builder.add_edge("search", "compose")
+        for name in ("ask_missing", "compose", "book"):
+            builder.add_edge(name, END)
+        await builder.compile().ainvoke({"state": store.conversations[conversation_id].slots})

@@ -1,29 +1,31 @@
-# 前端 Railway 简单部署指南
+# Frontend Deployment on Railway
 
-当前前端是 Next.js 15 + React 19，使用 **GitHub + Railpack** 部署。无需 Dockerfile。前端新建一个 Railway 服务，与后端分别构建和运行。
+English | [简体中文](frontend-railway.readme-zh.md)
 
-更新日期：2026-09-12。本次根据阶段 3 源码与本地验收记录同步功能状态；沿用原部署配置，未重新验证 Railway 平台配置或执行云端发布。文档入口见 [README](README.md)，本地演示见 [阶段 3 使用说明](../backend/docs/stage3-usage-zh.md)。
+The frontend uses Next.js 15 and React 19, deployed through **GitHub + Railpack**. No Dockerfile is required. Create a separate Railway service for the frontend so it builds and runs independently from the backend.
 
-## 0. 当前源码状态与功能边界
+See [the documentation index (Chinese)](README.md) and [the local demo guide (Chinese)](../backend/docs/stage3-usage-zh.md).
 
-部署分支需要包含 `frontend/lib/` 下的 API、日期、原因、SSE 实现，以及 `api-types.ts` 和生成文件 `openapi.generated.ts`。提交前检查 `git status`，不要把本地存在等同于已推送。
+## 0. Deployment prerequisites and feature scope
 
-`npm run gen:types` 从 `backend/scripts/export_contract.py` 导出的 Pydantic HTTP/SSE 模型生成 `lib/openapi.generated.ts`；`api-types.ts` 引用这些类型。生成需要本地后端 Python 环境，不需要启动服务。Railway 的 `/frontend` 构建使用已提交的生成文件，不在构建时执行跨目录生成。
+The deployment branch must include the API, date, reason, and SSE implementations under `frontend/lib/`, along with `api-types.ts` and the generated `openapi.generated.ts`. Confirm these files are committed and pushed before deploying.
 
-| 功能 | 当前行为 | 验收边界 |
+`npm run gen:types` generates `lib/openapi.generated.ts` from the Pydantic HTTP/SSE models exported by `backend/scripts/export_contract.py`; `api-types.ts` references these types. Generation requires a local backend Python environment, but not a running backend service. Railway builds `/frontend` using the committed generated file and does not run generation across directories during the build.
+
+| Feature | Current behavior | Usage notes |
 | --- | --- | --- |
-| 借衣文字对话 `/find` | JSON 文字 turn，展示 SSE 追问、推荐、回复和错误 | 本地真实后端联调通过，使用固定模型；在线 OpenAI 和云端仍待验证 |
-| 确认预约 | Reserve 打开弹窗；Confirm reservation 提交 intent=book、garment_id、confirmed=true、result_id，不发送非空文字 | 仅 booking_claim 表示成功；本地双窗口一成功一冲突、刷新和后端重启后不可借已验证 |
-| 推荐失效和重试 | 新文字禁用旧推荐；确认失败可保留原请求重试，缺失 done 会报断流 | 后端负责幂等性；冲突后重新搜索，不自动改订 |
-| 图片上传 | borrower 图片入口已关闭，后端拒绝文件上传 | 未实现 |
-| 出借对话 `/list` | 显示尚未开放提示，不创建 lender 对话 | 未实现 |
-| 上架与出借人清单 | 后端没有对应路由，前端保留部分组件和清单页面代码 | 不作为可用功能演示 |
+| Borrower text conversations at `/find` | Sends JSON text turns and displays SSE questions, recommendations, replies, and errors | Configure the OpenAI key and model on the backend and verify cloud conversations |
+| Booking confirmation | Reserve opens a dialog; Confirm reservation submits intent=book, garment_id, confirmed=true, and result_id without nonempty text | Only booking_claim indicates success; booked garments are unavailable during their reserved dates |
+| Recommendation invalidation and retries | New text disables old recommendations; failed confirmations can retain the original request for retry; missing done is reported as an interrupted stream | The backend handles idempotency; search again after conflicts, with no automatic alternative booking |
+| Image upload | The borrower upload entry point is disabled, and the backend rejects file uploads | Not implemented |
+| Lender conversations at `/list` | Shows a not-yet-available notice and does not create a lender conversation | Not implemented |
+| Publishing listings and lender inventory | No corresponding backend routes; some frontend components and inventory page code remain | Do not demonstrate these as working features |
 
-刷新会新建对话，不恢复完整聊天记录；已预约数据保存在后端 JSON 快照中。具体证据见 [阶段 3 验收记录](../backend/docs/stage3-acceptance-zh.md)。本地验收不代表线上版本已更新。
+Refreshing creates a new conversation and does not restore the full chat history. Booking data is stored in backend JSON snapshots.
 
-## 1. 本地确认能构建
+## 1. Verify the local build
 
-用 Node.js 22 执行：
+Run with Node.js 22:
 
 ```bash
 cd /Users/jingwu/hackathon-202609/borrowed/frontend
@@ -32,84 +34,82 @@ npm run typecheck
 npm run build
 ```
 
-阶段 3 验收记录中，类型检查、生产构建和 4 项 SSE 测试通过；浏览器真实后端联调及进程重启恢复通过。模型使用固定响应，未验证在线 OpenAI 或 Railway 部署。本次文档同步未重新运行这些检查。
+Commit and push the frontend source, `package.json`, `package-lock.json`, `next.config.ts`, and TypeScript configuration to the deployment branch. Do not commit `node_modules` or `.next`.
 
-将前端源码、`package.json`、`package-lock.json`、`next.config.ts` 和 TypeScript 配置提交并推送到部署分支。无需提交 `node_modules` 或 `.next`。
+The repository's `env.local` is missing the leading dot, so Next.js does not automatically load it as a standard `.env.local` file. Use Railway Variables for cloud configuration; local environment files do not configure the cloud service. [Next.js environment variables](https://nextjs.org/docs/pages/guides/environment-variables)
 
-仓库中的 `env.local` 缺少开头的点，Next.js 不会按标准 `.env.local` 自动加载它。云端统一使用 Railway Variables；不要把本地环境文件当作云端配置。[Next.js 环境变量说明](https://nextjs.org/docs/pages/guides/environment-variables)
+## 2. Create a frontend service
 
-## 2. 新建前端服务
+In the existing Railway project, select **New → GitHub Repo**, choose the same `borrowed` repository, and add a service, for example `borrowed-frontend`.
 
-在现有 Railway 项目中选择 **New → GitHub Repo**，选择同一个 `borrowed` 仓库，新增服务，可命名为 `borrowed-frontend`。
+Configure the frontend service in Settings:
 
-在这个前端服务的 Settings 中设置：
-
-| 设置 | 值 |
+| Setting | Value |
 | --- | --- |
-| 部署分支 | 已推送完整前端代码的分支 |
+| Deployment branch | The branch containing the complete pushed frontend code |
 | Root Directory | `/frontend` |
 | Builder | `Railpack` |
 | Build Command | `npm run build` |
 | Start Command | `npm run start -- --hostname 0.0.0.0 --port $PORT` |
 | Healthcheck Path | `/` |
-| Replicas | 先使用 `1` |
+| Replicas | Start with `1` |
 
-后端服务继续使用 `/backend`，不要把后端服务的 Root Directory 改成 `/frontend`。
+Keep the backend service's Root Directory at `/backend`; do not change it to `/frontend`.
 
-Railpack 应直接看到 `package.json` 和 `package-lock.json`。如果分析结果仍是 `backend/`、`frontend/` 等仓库目录，说明前端 Root Directory 尚未生效。云端 `/app` 是构建工具创建的工作目录，对应这里选择的 `frontend` 内容。[Railway 子目录部署](https://docs.railway.com/deployments/monorepo)
+Railpack should see `package.json` and `package-lock.json` directly. If its analysis still shows repository directories such as `backend/` and `frontend/`, the frontend Root Directory has not taken effect. The cloud `/app` directory is created by the build tool and contains the selected `frontend` directory's contents. [Railway monorepo deployment](https://docs.railway.com/deployments/monorepo)
 
-此项目通过 Next.js 服务代理 API，使用 `next build` + `next start`，无需改成静态导出，也不要使用 `npm run dev` 上线。[Next.js CLI](https://nextjs.org/docs/app/api-reference/cli/next)
+This project proxies API requests through the Next.js server and uses `next build` + `next start`. It does not need static export, and you should not run `npm run dev` in production. [Next.js CLI](https://nextjs.org/docs/app/api-reference/cli/next)
 
-## 3. 添加环境变量
+## 3. Add environment variables
 
-在前端服务 **Variables** 中填写：
+Set these in the frontend service's **Variables**:
 
 ```text
 RAILPACK_NODE_VERSION=22
 RAILPACK_NODE_NPM_INSTALL=npm ci
-API_ORIGIN=https://你的后端域名.up.railway.app
+API_ORIGIN=https://your-backend-domain.up.railway.app
 ```
 
-`API_ORIGIN` 填后端 HTTPS 根地址，不带 `/api`，也不要填前端自己的域名或 `localhost`。`PORT` 由 Railway 注入，不用手动设置。[Railpack Node.js](https://railpack.com/languages/node)
+Set `API_ORIGIN` to the backend's HTTPS root address, without `/api`. Do not use the frontend's own domain or `localhost`. Railway injects `PORT`; do not set it manually. [Railpack Node.js](https://railpack.com/languages/node)
 
-当前 `next.config.ts` 已读取 `API_ORIGIN`，并代理：
+`next.config.ts` reads `API_ORIGIN` and proxies:
 
 ```text
-浏览器 → 前端域名/api/...    → API_ORIGIN/api/...
-浏览器 → 前端域名/images/... → API_ORIGIN/images/...
+Browser → frontend-domain/api/...    → API_ORIGIN/api/...
+Browser → frontend-domain/images/... → API_ORIGIN/images/...
 ```
 
-代码默认后端为 `http://127.0.0.1:8000`，仅用于本地开发。Railway 必须显式设置 `API_ORIGIN`，否则请求会指向前端容器自身的 8000 端口。变量在首次构建前配置；修改 `API_ORIGIN` 后重新构建并部署，使构建产物里的 rewrites 更新。[Next.js rewrites](https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites)
+The default backend address, `http://127.0.0.1:8000`, is for local development only. Set `API_ORIGIN` explicitly on Railway, or requests will target port 8000 inside the frontend container itself. Configure it before the first build. After changing `API_ORIGIN`, rebuild and redeploy to update the rewrites in the build output. [Next.js rewrites](https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites)
 
-已确认 `lib/api.ts` 的地址选择逻辑：
+Address selection in `lib/api.ts` works as follows:
 
-- 浏览器端读取 `NEXT_PUBLIC_API_BASE`，未设置时使用空前缀，即同源 `/api/...` 和 `/images/...`。
-- 服务端页面读取 `API_ORIGIN`，未设置时使用`http://127.0.0.1:8000`；商品详情和出借人页面使用这一逻辑。
-- `next.config.ts` 使用 `API_ORIGIN` 配置同源代理，与服务端 API 默认后端地址一致。
+- Browser code reads `NEXT_PUBLIC_API_BASE`. When unset, it uses an empty prefix for same-origin `/api/...` and `/images/...` requests.
+- Server-rendered pages read `API_ORIGIN`, defaulting to `http://127.0.0.1:8000`. Garment details and lender pages use this logic.
+- `next.config.ts` uses `API_ORIGIN` for the same-origin proxy, with the same default backend address as the server-side API code.
 
-**按本文部署时，不要设置 `NEXT_PUBLIC_API_BASE`，已有非空值应删除。** 这样浏览器请求由 Next.js 同源转发，一般无需额外配置浏览器到后端的 CORS。若设置为后端域名，浏览器会绕过代理，必须另行处理 CORS；当前后端未配置 CORS 中间件。修改此公开变量后也需重新构建，因为 Next.js 会在构建时将其写入浏览器代码。[Next.js 环境变量说明](https://nextjs.org/docs/pages/guides/environment-variables)
+**When following this guide, leave `NEXT_PUBLIC_API_BASE` unset and remove any existing nonempty value.** Browser requests then pass through the Next.js same-origin proxy, generally avoiding additional browser-to-backend CORS configuration. Setting it to the backend domain bypasses the proxy and requires separate CORS handling; the backend currently has no CORS middleware. Changes to this public variable also require a rebuild because Next.js embeds it in browser code at build time. [Next.js environment variables](https://nextjs.org/docs/pages/guides/environment-variables)
 
-当前代码不读取 `NEXT_PUBLIC_API_URL`，设置它不会改变 API 地址。
+The code does not read `NEXT_PUBLIC_API_URL`; setting it does not change the API address.
 
-前端无需 Volume 或数据库，预约持久化仍由后端负责。模型 API Key 等后端密钥应放在后端服务，不要放入浏览器可见的 `NEXT_PUBLIC_*` 变量。
+The frontend needs no Volume or database. The backend handles booking persistence. Keep model API keys and other backend secrets on the backend service, never in browser-visible `NEXT_PUBLIC_*` variables.
 
-## 4. 部署并生成前端地址
+## 4. Deploy and generate a frontend domain
 
-1. 应用配置并点击 Deploy / Redeploy。
-2. 确认依赖安装和 `next build` 成功，运行日志显示服务就绪。
-3. 在 **Settings → Networking → Public Networking** 点击 **Generate Domain**。
-4. 如需指定目标端口，使用日志中与 `$PORT` 一致的监听端口。
-5. 打开前端域名，应显示 “More to wear. More to give. More to share.” 和两个入口。
+1. Apply the configuration and click **Deploy / Redeploy**.
+2. Confirm dependency installation and `next build` succeed, and the runtime logs show the service is ready.
+3. Under **Settings → Networking → Public Networking**, click **Generate Domain**.
+4. If a target port is required, use the listening port in the logs that matches `$PORT`.
+5. Open the frontend domain. It should display “More to wear. More to give. More to share.” and two entry points.
 
-前端健康检查用 `/`。当前前端没有 `/health`，也没有把后端的 `/health` 加入 rewrites；后端健康检查仍直接访问后端域名。[Railway Next.js 指南](https://docs.railway.com/guides/nextjs)
+Use `/` for the frontend health check. The frontend has no `/health` endpoint and does not include the backend's `/health` in its rewrites. Check backend health directly on the backend domain. [Railway Next.js guide](https://docs.railway.com/guides/nextjs)
 
-## 5. 验证页面与后端代理
+## 5. Verify pages and the backend proxy
 
-替换以下两个域名，在终端执行：
+Replace both domains and run in your terminal:
 
 ```bash
-export BORROWED_FRONTEND_URL='https://你的前端域名.up.railway.app'
-export BORROWED_BACKEND_URL='https://你的后端域名.up.railway.app'
+export BORROWED_FRONTEND_URL='https://your-frontend-domain.up.railway.app'
+export BORROWED_BACKEND_URL='https://your-backend-domain.up.railway.app'
 
 curl --fail-with-body -sS "$BORROWED_BACKEND_URL/health"
 curl --fail-with-body -I "$BORROWED_FRONTEND_URL/"
@@ -118,43 +118,41 @@ curl --fail-with-body -sS "$BORROWED_FRONTEND_URL/api/garments/search" \
   -d '{"city":"Hamburg","sizes_eu":[38],"wear_date":"2026-09-18","limit":1000}'
 ```
 
-搜索示例沿用后端 `DEMO_DATE=2026-09-16` 的演示配置；使用真实日期时相应调整穿着日期。搜索走的是前端域名，用来确认代理可以访问后端。
+This search example uses the backend demo configuration `DEMO_DATE=2026-09-16`. Adjust the wear date when using real dates. The search targets the frontend domain to verify that the proxy reaches the backend.
 
-再用浏览器验证：
+Then check in a browser:
 
-- 首页两个入口 `/find` 和 `/list` 可以打开；`/list` 当前显示尚未开放提示，不演示出借流程。
-- 搜索返回的 `/images/...` 图片经前端域名能加载。
-- `/find` 能创建对话，发送纯文字后看到流式回复，浏览器 Network 中请求没有 4xx/5xx；不能仅凭 HTTP 200 判断成功，还需检查 SSE 中是否有 `error` 事件。
-- 商品详情 `/garment/实际商品ID` 能展示，验证服务端 API 请求路径。
+- Both home page entry points, `/find` and `/list`, open. `/list` currently shows a not-yet-available notice; do not demonstrate a lender flow.
+- `/images/...` images returned by search load through the frontend domain.
+- `/find` creates a conversation and displays streamed replies after text input. Requests in the browser Network panel have no 4xx/5xx errors. HTTP 200 alone is insufficient; also check for SSE `error` events.
+- A garment detail page at `/garment/actual-garment-id` renders, verifying the server-side API request path.
 
-后端必须配置 `OPENAI_API_KEY` 和 `OPENAI_MODEL` 才能验证真实模型对话；缺少配置时 HTTP 200 的 SSE 仍可能包含 `LLM_NOT_CONFIGURED`。使用演示数据继续验证：
+The backend requires `OPENAI_API_KEY` and `OPENAI_MODEL` to verify real model conversations. Without them, an HTTP 200 SSE response may still contain `LLM_NOT_CONFIGURED`. Continue with the demo data:
 
-1. 两个标签页分别输入“我周五要参加晚宴”，再输入“汉堡，EU 38”，都先取得同一商品的推荐。
-2. 两边打开 Reserve 弹窗，再依次点击 Confirm reservation；第一边应收到 booking_claim，第二边应显示 BOOKING_CONFLICT。
-3. 刷新重新搜索，已预约商品不再出现；后端重部署保留同一 Volume，再验证仍不可借。
+1. In two tabs, enter “I am attending a dinner party on Friday”, then “Hamburg, EU 38”. Obtain a recommendation for the same garment in both tabs before proceeding.
+2. Open Reserve in each tab, then click Confirm reservation in sequence. The first should receive booking_claim; the second should display BOOKING_CONFLICT.
+3. Refresh and search again. The booked garment should no longer appear. Redeploy the backend with the same Volume and verify it remains unavailable.
 
-这些确认会写入后端数据，不扣款。页面、健康检查或单次文字回复成功均不能代替上述验证。无凭据的固定脚本仅供本地复现，输入限制见 [阶段 3 使用说明](../backend/docs/stage3-usage-zh.md)。
+These confirmations write backend data without charging money. A working page, health check, or single text reply does not replace these checks. The credential-free scripted demo is only for local reproduction; see its input restrictions in [the local demo guide (Chinese)](../backend/docs/stage3-usage-zh.md).
 
-## 常见问题
+## Troubleshooting
 
-| 错误或现象 | 检查与处理 |
+| Error or symptom | Check and resolution |
 | --- | --- |
-| Railpack 不知道如何构建 | Root Directory 应为 `/frontend`，部署分支应包含 `package.json` |
-| `Module not found: ...lib/api` 等 | 当前本地已包含该模块；检查部署分支是否包含 `frontend/lib` 的实现文件及 `openapi.generated.ts` |
-| `npm ci` 报 lock 不匹配 | 本地同步 package.json 和 package-lock.json、验证构建后一起提交 |
-| 找不到 TypeScript 或构建工具 | 不要将依赖安装配置成忽略 devDependencies，构建需要它们 |
-| 启动时找不到 production build | Build Command 应执行 `npm run build`，不能只安装依赖 |
-| 页面 502 | 确认 Start Command 使用 `0.0.0.0` 和 `$PORT`，查看运行日志 |
-| 前端 `/health` 返回 404 | 前端健康检查用 `/`，后端才使用 `/health` |
-| 首页正常但 API 502 | 检查 API_ORIGIN、后端是否健康，变量修改后重新构建 |
-| API 404 | 核对后端已部署版本是否有该接口；API_ORIGIN 不应带 `/api` |
-| 商品详情请求失败 | 当前服务端已使用绝对地址；检查运行时 API_ORIGIN、后端状态和商品 ID |
-| 浏览器跨域错误 | 删除非空 NEXT_PUBLIC_API_BASE 后重新构建，恢复同源代理 |
-| `/list` 提示尚未开放 | 当前只实现 borrower，属于预期行为 |
-| 确认预约返回 422 | 阶段 3 已对齐协议；检查部署版本和实际 JSON 是否包含确认字段且不带非空 text |
-| BOOKING_CONFLICT | 商品已被其他对话占用，重新搜索或调整日期 |
-| 页面仍有附图入口 | 核对是否部署旧前端；当前 borrower 已关闭上传入口 |
-| 对话 HTTP 200 但显示模型配置错误 | 检查 SSE error 内容以及后端 OPENAI_API_KEY / OPENAI_MODEL |
-| 流式回复迟迟不出现 | 分别检查浏览器流式请求、前端代理和后端日志；首页健康不能验证 SSE |
-
-本地阶段 3 已完成 borrower 浏览器联调；云端部署、真实模型调用及 Volume 跨部署恢复仍须按本文另行验证。
+| Railpack cannot determine how to build | Set Root Directory to `/frontend` and ensure the deployment branch includes `package.json` |
+| `Module not found: ...lib/api` or similar | Ensure the deployment branch includes the implementations under `frontend/lib` and `openapi.generated.ts` |
+| `npm ci` reports a lock mismatch | Sync package.json and package-lock.json locally, verify the build, and commit both |
+| TypeScript or build tools are missing | Do not configure dependency installation to omit devDependencies; the build requires them |
+| Startup cannot find a production build | Build Command must run `npm run build`, not just install dependencies |
+| Page returns 502 | Check that Start Command uses `0.0.0.0` and `$PORT`, and inspect runtime logs |
+| Frontend `/health` returns 404 | Use `/` for frontend health checks; `/health` belongs to the backend |
+| Home page works but API returns 502 | Check API_ORIGIN and backend health; rebuild after changing variables |
+| API returns 404 | Verify that the deployed backend version has the endpoint; API_ORIGIN must not include `/api` |
+| Garment detail request fails | Check runtime API_ORIGIN, backend status, and garment ID |
+| Browser reports a CORS error | Remove any nonempty NEXT_PUBLIC_API_BASE and rebuild to restore the same-origin proxy |
+| `/list` says it is not yet available | Expected behavior; only the borrower flow is implemented |
+| Booking confirmation returns 422 | Check the deployed version and ensure the actual JSON includes intent=book, garment_id, confirmed=true, and result_id, without nonempty text |
+| BOOKING_CONFLICT | Another conversation has reserved the garment; search again or change dates |
+| An image attachment entry point still appears | Check for an old frontend deployment; the borrower upload entry point is disabled |
+| Conversation returns HTTP 200 but shows a model configuration error | Inspect the SSE error and backend OPENAI_API_KEY / OPENAI_MODEL |
+| Streamed replies do not appear | Inspect the browser stream request, frontend proxy, and backend logs separately; a healthy home page does not verify SSE |

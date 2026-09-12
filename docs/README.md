@@ -14,8 +14,8 @@
 
 ## 部署
 
-- [后端 Railway 指南](backend-railway.readme.md)
-- [前端 Railway 指南](frontend-railway.readme.md)
+- 后端 Railway 指南：[中文](backend-railway.readme-zh.md) · [English](backend-railway.readme.md)
+- 前端 Railway 指南：[中文](frontend-railway.readme-zh.md) · [English](frontend-railway.readme.md)
 
 前端默认连接本地后端；Railway 必须显式设置 API_ORIGIN。模型凭据仅放后端，预约跨部署保存需要后端 Volume。
 

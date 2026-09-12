@@ -16,6 +16,11 @@ eggs/
 .eggs/
 lib/
 lib64/
+
+# Frontend application source. The generic Python `lib/` entry above must not
+# hide browser code and generated OpenAPI contracts from Git.
+!frontend/lib/
+!frontend/lib/**
 parts/
 sdist/
 var/

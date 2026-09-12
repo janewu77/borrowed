@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MORE — To wear, give, share",
-  description: "Occasion wear with more life: borrow, lend, and share.",
+  title: "MORE THAN ONCE",
+  description: "MORE THAN ONCE. Occasion wear with more life: borrow, lend, and share.",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

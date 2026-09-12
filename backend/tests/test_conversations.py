@@ -80,6 +80,7 @@ def test_full_flow_restart_and_idempotency(settings):
         assert event(first, "question")["fields"] == ["city", "sizes_eu"]
         assert not app.state.store.reservations
         results = event(turn(client, cid, text="汉堡，EU 38"), "results")
+        assert len(results["hits"]) <= 3
         assert all(hit["feasibility"]["feasible"] for hit in results["hits"])
         assert results["hits"][0]["feasibility"]["wear_from"] == "2026-09-18"
         assert not app.state.store.reservations
@@ -167,7 +168,7 @@ def test_composition_failure_keeps_results_and_question_fallback(settings):
     with TestClient(app) as client:
         cid = create(client)
         question = turn(client, cid, text="hello")
-        assert len(event(question, "question")["fields"]) == 2
+        assert len(event(question, "question")["fields"]) == 3
         results = turn(client, cid, text="Hamburg EU 38 Friday")
         assert event(results, "error")
         assert event(turn(client, cid, **confirmation(event(results, "results"))), "booking_claim")

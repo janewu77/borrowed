@@ -43,7 +43,7 @@ class BorrowerGraph:
                 extraction = await self.llm.extract({
                     "text": turn.text, "today": store.today().isoformat(),
                     "slots": state.slots.model_dump(mode="json"),
-                    "missing_fields": state.slots.missing()[:2],
+                    "missing_fields": state.slots.missing(),
                 })
             slots = extraction.merge(state.slots, store.today())
             changes = {"slots": slots}
@@ -56,7 +56,7 @@ class BorrowerGraph:
 
         async def ask_missing(data: GraphState):
             state = data["state"]
-            fields = state.slots.missing()[:2]
+            fields = state.slots.missing()
             # Emit a usable question even if the language service is unavailable.
             labels = {"wear_date": "wear date (including year)",
                       "city": "city", "sizes_eu": "EU size"}
@@ -78,7 +78,9 @@ class BorrowerGraph:
         async def search(data: GraphState):
             nonlocal hits
             state = data["state"]
-            request = state.slots.search_request()
+            # A chat recommendation is a curated preview, so keep the card grid
+            # aligned with the three garments the assistant describes.
+            request = state.slots.search_request().model_copy(update={"limit": 3})
             hits = await invoke("search_garments", store, request)
             result_id = uuid4().hex
             result = await save(state.model_copy(update={

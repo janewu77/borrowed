@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{color-scheme:light dark}
+  body{margin:0}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+<title>borrowed Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+</head>
+<body>
+<style>
+:root{
+  --ground:#EDEFEE;
+  --surface:#FFFFFF;
+  --surface-2:#E4E8E6;
+  --ink:#141918;
+  --muted:#57615F;
+  --hair:#CBD2CF;
+  --accent:#0E5157;
+  --accent-soft:#D7E5E4;
+  --hold:#B5511F;
+  --hold-soft:#F2DCCD;
+  --ok:#2C6E49;
+  --bad:#96231F;
+  --plate:#FBFAF7;
+  --plate-hair:#DDD9D0;
+
+  --f-display:"Newsreader",Georgia,"Times New Roman",serif;
+  --f-body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+
+  --s-1:.8125rem; --s0:.9375rem; --s1:1.0625rem;
+  --s2:1.3125rem; --s3:1.6875rem; --s4:2.125rem; --s5:2.875rem;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1413;
+    --surface:#171D1C;
+    --surface-2:#212928;
+    --ink:#E5EAE8;
+    --muted:#95A19E;
+    --hair:#2C3634;
+    --accent:#5BC6CB;
+    --accent-soft:#123236;
+    --hold:#E39158;
+    --hold-soft:#3A2317;
+    --ok:#68B98A;
+    --bad:#E3776F;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1413;
+  --surface:#171D1C;
+  --surface-2:#212928;
+  --ink:#E5EAE8;
+  --muted:#95A19E;
+  --hair:#2C3634;
+  --accent:#5BC6CB;
+  --accent-soft:#123236;
+  --hold:#E39158;
+  --hold-soft:#3A2317;
+  --ok:#68B98A;
+  --bad:#E3776F;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:var(--s0);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{
+  max-width:1140px;
+  margin:0 auto;
+  padding-inline:20px;
+  padding-block:0 72px;
+}
+.shell{display:grid;grid-template-columns:200px minmax(0,1fr);gap:56px;align-items:start}
+@media (max-width:900px){.shell{grid-template-columns:1fr;gap:0}}
+
+/* ---------- masthead ---------- */
+.masthead{padding-block:56px 30px;border-bottom:1px solid var(--hair)}
+.eyebrow{
+  font-family:var(--f-mono);font-size:var(--s-1);font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+}
+h1{
+  font-family:var(--f-display);font-weight:600;font-size:var(--s5);
+  line-height:1.04;letter-spacing:-.02em;margin:.28em 0 0;text-wrap:balance;
+}
+h1 em{font-style:italic;font-weight:400}
+.thesis{
+  font-family:var(--f-display);font-size:var(--s2);line-height:1.45;
+  color:var(--ink);max-width:34em;margin:.7em 0 0;text-wrap:pretty;
+}
+.meta{
+  display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:22px;
+  font-family:var(--f-mono);font-size:var(--s-1);color:var(--muted);
+}
+.meta b{color:var(--ink);font-weight:500}
+
+/* ---------- rail ---------- */
+.rail{position:sticky;top:24px;padding-top:40px}
+@media (max-width:900px){.rail{position:static;padding-block:28px 0}}
+.rail-label{
+  font-family:var(--f-mono);font-size:.75rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+}
+.rail nav{display:flex;flex-direction:column;gap:2px}
+@media (max-width:900px){.rail nav{flex-flow:row wrap;gap:6px 14px}}
+.rail a{
+  color:var(--muted);text-decoration:none;font-size:var(--s-1);
+  padding:3px 0;border-bottom:1px solid transparent;
+}
+.rail a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ---------- sections ---------- */
+main{padding-top:40px;min-width:0}
+section{padding-block:34px;border-top:1px solid var(--hair)}
+section:first-child{border-top:0;padding-top:8px}
+h2{
+  font-family:var(--f-display);font-weight:600;font-size:var(--s3);
+  line-height:1.2;letter-spacing:-.01em;margin:0 0 .1em;text-wrap:balance;
+}
+h2 .num{
+  font-family:var(--f-mono);font-size:var(--s-1);font-weight:500;color:var(--accent);
+  letter-spacing:.1em;display:block;margin-bottom:.5em;
+}
+h3{
+  font-family:var(--f-body);font-weight:600;font-size:var(--s1);
+  margin:26px 0 8px;letter-spacing:-.005em;
+}
+p{margin:.8em 0;max-width:66ch}
+.lede{color:var(--muted);max-width:62ch;margin-top:.35em}
+strong{font-weight:600}
+code,.mono{font-family:var(--f-mono);font-size:.92em}
+p code,li code,td code{
+  background:var(--surface-2);padding:.1em .34em;border-radius:3px;
+}
+a{color:var(--accent)}
+
+ul{margin:.8em 0;padding-left:1.1em;max-width:66ch}
+li{margin:.4em 0}
+li::marker{color:var(--muted)}
+
+/* ---------- hold window hero ---------- */
+.hold{
+  background:var(--surface);border:1px solid var(--hair);
+  border-radius:2px;padding:22px 22px 18px;margin-top:26px;
+}
+.hold-head{
+  display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
+  justify-content:space-between;margin-bottom:20px;
+}
+.hold-head h3{margin:0;font-size:var(--s1)}
+.hold-head .ratio{
+  font-family:var(--f-mono);font-size:var(--s-1);color:var(--hold);
+  letter-spacing:.04em;font-weight:500;
+}
+.track{overflow-x:auto;padding-bottom:4px}
+.grid8{
+  display:grid;grid-template-columns:repeat(9,minmax(50px,1fr));
+  min-width:500px;gap:0;
+}
+.daylab{
+  font-family:var(--f-mono);font-size:.72rem;color:var(--muted);
+  text-align:center;padding-bottom:7px;border-bottom:1px solid var(--hair);
+  letter-spacing:.02em;
+}
+.daylab b{display:block;color:var(--ink);font-weight:500;font-size:.8rem}
+.bar{
+  height:26px;border-radius:2px;display:flex;align-items:center;
+  justify-content:center;font-family:var(--f-mono);font-size:.7rem;
+  letter-spacing:.03em;white-space:nowrap;overflow:hidden;
+}
+.row{display:contents}
+.spacer{height:26px}
+.b-ship{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+.b-wear{background:var(--accent);color:var(--surface)}
+.b-ret{background:var(--hold-soft);color:var(--hold);border:1px solid var(--hold)}
+.b-clean{
+  background:repeating-linear-gradient(135deg,var(--hold-soft) 0 5px,transparent 5px 10px);
+  color:var(--hold);border:1px solid var(--hold);
+}
+.rowlab{
+  font-family:var(--f-mono);font-size:.72rem;color:var(--muted);
+  letter-spacing:.08em;text-transform:uppercase;padding:14px 0 5px;
+}
+.hold-note{
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--hair);
+  font-size:var(--s-1);color:var(--muted);max-width:58ch;
+}
+.hold-note b{color:var(--ink)}
+
+/* ---------- split table ---------- */
+table{
+  width:100%;border-collapse:collapse;margin:18px 0;font-size:var(--s-1);
+  font-variant-numeric:tabular-nums;
+}
+th{
+  text-align:left;font-family:var(--f-mono);font-size:.72rem;font-weight:500;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  padding:0 12px 8px 0;border-bottom:1px solid var(--hair);vertical-align:bottom;
+}
+td{padding:11px 12px 11px 0;border-bottom:1px solid var(--hair);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td:first-child,th:first-child{padding-left:0}
+.tscroll{overflow-x:auto}
+.tscroll table{min-width:520px}
+.who{font-weight:600;white-space:nowrap}
+.yes{color:var(--ok);font-family:var(--f-mono)}
+.no{color:var(--muted);font-family:var(--f-mono)}
+
+/* ---------- arithmetic block ---------- */
+pre.calc{
+  font-family:var(--f-mono);font-size:var(--s-1);line-height:1.75;
+  background:var(--surface);border:1px solid var(--hair);border-left:3px solid var(--accent);
+  border-radius:2px;padding:18px 20px;margin:20px 0;overflow-x:auto;
+}
+pre.calc .c{color:var(--muted)}
+pre.calc .k{color:var(--accent);font-weight:500}
+
+.enums{display:flex;flex-wrap:wrap;gap:7px;margin:16px 0}
+.enum{
+  font-family:var(--f-mono);font-size:.76rem;letter-spacing:.04em;
+  border:1px solid var(--hair);background:var(--surface);
+  padding:4px 9px;border-radius:2px;color:var(--ink);
+}
+.enum.hi{border-color:var(--hold);color:var(--hold);background:var(--hold-soft)}
+
+/* ---------- pull quote ---------- */
+.pull{
+  font-family:var(--f-display);font-size:var(--s2);line-height:1.45;
+  border-left:3px solid var(--hold);padding:2px 0 2px 20px;
+  margin:26px 0;max-width:40em;color:var(--ink);
+}
+
+/* ---------- figure plate (mermaid) ---------- */
+figure{margin:24px 0}
+.plate{
+  background:var(--plate);border:1px solid var(--plate-hair);border-radius:2px;
+  padding:18px 14px;overflow-x:auto;color:#141918;
+}
+.plate pre.mermaid{margin:0;background:transparent;min-width:360px}
+figcaption{
+  font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;
+  color:var(--muted);margin-top:9px;text-transform:uppercase;
+}
+
+/* ---------- numbered steps ---------- */
+ol.steps{list-style:none;padding:0;margin:18px 0;counter-reset:st}
+ol.steps li{
+  counter-increment:st;display:grid;grid-template-columns:26px 1fr;gap:14px;
+  padding:12px 0;border-top:1px solid var(--hair);margin:0;max-width:66ch;
+}
+ol.steps li::before{
+  content:counter(st);font-family:var(--f-mono);font-size:.78rem;
+  color:var(--accent);padding-top:2px;
+}
+
+/* ---------- rules list ---------- */
+.rules{list-style:none;padding:0;margin:18px 0}
+.rules li{
+  padding:12px 0 12px 16px;border-left:2px solid var(--hair);margin:0 0 2px;
+  max-width:64ch;
+}
+.rules li b{display:block;font-weight:600;margin-bottom:2px}
+.rules li.key{border-left-color:var(--accent)}
+
+/* ---------- findings ---------- */
+.finding{
+  background:var(--surface);border:1px solid var(--hair);border-radius:2px;
+  padding:16px 18px 16px 16px;margin:12px 0;border-left:3px solid var(--muted);
+}
+.finding.block{border-left-color:var(--bad)}
+.finding.note{border-left-color:var(--accent)}
+.f-head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:baseline;margin-bottom:4px}
+.f-head h3{margin:0;font-size:var(--s0)}
+.sev{
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.11em;text-transform:uppercase;
+  padding:2px 7px;border-radius:2px;white-space:nowrap;
+}
+.sev.block{background:var(--bad);color:var(--surface)}
+.sev.note{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+.finding p{font-size:var(--s-1);margin:.5em 0;max-width:62ch}
+.fix{
+  font-size:var(--s-1);border-top:1px solid var(--hair);margin-top:12px;padding-top:10px;
+}
+.fix b{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ok);display:block;margin-bottom:3px}
+
+/* ---------- cut order ---------- */
+.cut{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0;
+  font-family:var(--f-mono);font-size:var(--s-1);
+}
+.cut .step{border:1px solid var(--hair);background:var(--surface);padding:5px 10px;border-radius:2px}
+.cut .arr{color:var(--muted)}
+.cut .never{border-color:var(--ok);color:var(--ok);background:transparent}
+
+footer{
+  border-top:1px solid var(--hair);margin-top:16px;padding-top:20px;
+  font-family:var(--f-mono);font-size:.74rem;color:var(--muted);
+}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">borrowed · technical architecture v0.1</div>
+  <h1>Availability is arithmetic,<br><em>not a recommendation</em></h1>
+  <p class="thesis">The model reads intent and writes sentences. It never decides whether a dress is free. Everything below exists to make that structural rather than aspirational.</p>
+  <div class="meta">
+    <span>Companion to <b>SPEC.md</b></span>
+    <span>Stack <b>Next.js · FastAPI · LangGraph</b></span>
+    <span>Store <b>JSON, in-memory</b></span>
+    <span>Catalogue <b>386 records, measured</b></span>
+    <span>Booking real · <b>no payment</b></span>
+    <span>Hamburg · EU 34–44</span>
+  </div>
+</header>
+
+<div class="shell">
+
+<aside class="rail">
+  <div class="rail-label">Contents</div>
+  <nav>
+    <a href="#roles">The two roles</a>
+    <a href="#split">The split</a>
+    <a href="#system">System overview</a>
+    <a href="#frontend">Frontend</a>
+    <a href="#engine">The engine</a>
+    <a href="#store">The store</a>
+    <a href="#data">The data</a>
+    <a href="#graphs">Agent graphs</a>
+    <a href="#mcp">MCP service</a>
+    <a href="#images">Image pipeline</a>
+    <a href="#build">Build order</a>
+    <a href="#findings">Findings</a>
+  </nav>
+</aside>
+
+<main>
+
+<section id="hold">
+  <div class="hold">
+    <div class="hold-head">
+      <h3>One Friday wedding, in days of garment time</h3>
+      <span class="ratio">9 days held · 4 days worn</span>
+    </div>
+    <div class="track">
+      <div class="grid8">
+        <div class="daylab">Wed<b>16</b></div>
+        <div class="daylab">Thu<b>17</b></div>
+        <div class="daylab">Fri<b>18</b></div>
+        <div class="daylab">Sat<b>19</b></div>
+        <div class="daylab">Sun<b>20</b></div>
+        <div class="daylab">Mon<b>21</b></div>
+        <div class="daylab">Tue<b>22</b></div>
+        <div class="daylab">Wed<b>23</b></div>
+        <div class="daylab">Thu<b>24</b></div>
+      </div>
+      <div class="rowlab">Visible to the borrower</div>
+      <div class="grid8">
+        <div class="bar b-ship" style="grid-column:1/3">ship → lands Thu</div>
+        <div class="bar b-wear" style="grid-column:3/7">wear</div>
+        <div class="spacer" style="grid-column:7/10"></div>
+      </div>
+      <div class="rowlab">Invisible, and occupied</div>
+      <div class="grid8">
+        <div class="spacer" style="grid-column:1/7"></div>
+        <div class="bar b-ret" style="grid-column:7/9">return</div>
+        <div class="bar b-clean" style="grid-column:9/10">clean</div>
+      </div>
+    </div>
+    <p class="hold-note">The dress is unavailable from the <b>16th to the 24th</b> for four days of wear. That ratio is why availability is worth computing instead of guessing — and it is the most convincing number in the pitch. Leg values are the catalogue's own: <code>delivery_days 1</code> · <code>rental_days 4</code> · <code>return_days 2</code> · <code>cleaning_days 1</code>, plus one day of buffer, baked in and never shown.</p>
+  </div>
+</section>
+
+<section id="roles">
+  <h2><span class="num">Vocabulary</span>The two roles, fixed for the whole project</h2>
+  <p class="lede">These words everywhere — prose, code, UI copy, prompts, tool descriptions — and never the old ones.</p>
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Term</th><th>Who</th><th>Previously</th></tr></thead>
+    <tbody>
+      <tr><td class="who">borrower</td><td>the person who rents a garment <em>for</em> an occasion — Mira</td><td class="no">renter</td></tr>
+      <tr><td class="who">lender</td><td>the person who lends her garment <em>out</em> — Lena</td><td class="no">owner, then renter</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The pair reads correctly in plain English with no gloss, which is the point: a borrower borrows, a lender lends, and neither word needs explaining to a judge or a definition printed beside it in the UI. <code>renter</code> is retired outright — it was ambiguous in both directions and should not appear anywhere.</p>
+  <ul class="rules">
+    <li><b>One carry-over: <code>catalog.json</code> still uses <code>owner_id</code>, <code>owner_name</code>, <code>owner_city</code> and <code>owner_rating</code>.</b> Those are real keys in a real file and are left untouched on purpose. Map them to <code>lender_*</code> <strong>in the loader</strong>, in one place, so the seed stays as it is and nothing downstream ever sees the old word.</li>
+  </ul>
+</section>
+
+<section id="split">
+  <h2><span class="num">The decision everything follows from</span>Three layers, split by what has to be true of them</h2>
+  <p class="lede">SPEC §1.1 makes one load-bearing claim. An architecture either enforces it structurally or it doesn't — prompt discipline is not a substitute.</p>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Layer</th><th>Who does it</th><th>Property required of it</th></tr></thead>
+    <tbody>
+      <tr><td class="who">Deterministic core</td><td>pure Python functions — no LLM, no I/O</td><td>correct, unit-tested, reproducible without a database</td></tr>
+      <tr><td class="who">Tool boundary</td><td>one registry; hard constraints applied inside</td><td><strong>unbypassable</strong> — no caller can opt out</td></tr>
+      <tr><td class="who">Conversational shell</td><td>LangGraph + Claude</td><td>fluent, recoverable, replaceable</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <ul class="rules">
+    <li class="key"><b>Availability is a pure function.</b> It runs with no database and no model, which is exactly why it can be trusted — and demonstrated live.</li>
+    <li class="key"><b>The tool layer filters; callers only present.</b> <code>search_garments</code> returns only feasible garments, so no agent — ours or a stranger's — can offer a dress that cannot arrive.</li>
+    <li class="key"><b>"It asks before it searches" is an edge in a graph.</b> A model that forgets is a product failure. A graph that cannot take the edge is a guarantee.</li>
+  </ul>
+</section>
+
+<section id="system">
+  <h2><span class="num">01 · Overview</span>Our agents and a stranger's agent enter through the same door</h2>
+  <figure>
+    <div class="plate">
+<pre class="mermaid">
+flowchart TB
+  subgraph FE["Frontend · Next.js + Tailwind · Vercel"]
+    direction LR
+    OWN["/list<br/>lender chat"]
+    RNT["/find<br/>borrower chat"]
+    DET["/garment/[id]<br/>detail + timeline"]
+  end
+  subgraph BE["Backend · FastAPI · one container"]
+    direction TB
+    API["HTTP edge — SSE turn · REST reads"]
+    subgraph AG["1 · Agents — LangGraph"]
+      OG["LenderGraph"]
+      RG["BorrowerGraph"]
+    end
+    subgraph TL["2 · Tool registry — ONE definition"]
+      TOOLS["search · availability · explain<br/>bundle · draft · patch · publish · book"]
+    end
+    subgraph DM["3 · Domain — pure, no LLM, no I/O"]
+      AV["availability engine"]
+      SZ["size mapping"]
+      OC["occasion normalisation"]
+    end
+    subgraph DA["4 · Data access — repository interface"]
+      REPO["repositories"]
+    end
+    API --> AG --> TL --> DM
+    TL --> DA
+  end
+  MCP["MCP server<br/>streamable HTTP /mcp"]
+  WK["Image worker<br/>async queue"]
+  PG[("JSON store<br/>in-memory + atomic snapshot")]
+  FS[("Image store<br/>originals immutable")]
+  CL["Claude API<br/>vision · patch · rank · prose"]
+  EXT["Third-party agents<br/>Claude Desktop, others"]
+  FE -- "SSE + REST" --> API
+  EXT --> MCP --> TL
+  AG -. "in-process, same registry" .-> TL
+  AG --> CL
+  DA --> PG
+  API --> WK --> FS
+  WK --> CL
+  DET --> FS
+</pre>
+    </div>
+    <figcaption>Figure 1 — the two paths into the tool registry are the point of the diagram</figcaption>
+  </figure>
+</section>
+
+<section id="frontend">
+  <h2><span class="num">02 · Frontend</span>Next.js App Router, one client subtree for the conversation</h2>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Route</th><th>Rendering</th><th>Job</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">/</td><td>static</td><td>pick a side — two buttons for the demo</td></tr>
+      <tr><td class="mono">/list</td><td>client chat</td><td>lender listing conversation</td></tr>
+      <tr><td class="mono">/find</td><td>client chat</td><td>borrower conversation</td></tr>
+      <tr><td class="mono">/garment/[id]</td><td>server</td><td><strong>original photo first</strong>, gallery, availability timeline</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Components that carry product meaning</h3>
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Component</th><th>Why it exists in this shape</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">AgentQuestion</td><td>a question renders <strong>visibly differently</strong> from an answer. Asking instead of guessing is the defining behaviour — let the judge watch it happen</td></tr>
+      <tr><td class="mono">ListingDraftCard</td><td>every field carries provenance: <code>from photo</code> / <code>you said</code>, plus <code>size not verified</code></td></tr>
+      <tr><td class="mono">ResultCard ×3</td><td>image, lender, price, <strong>lands Thu 17 Sep</strong>, one line of reason</td></tr>
+      <tr><td class="mono">AvailabilityTimeline</td><td>four bars — ship · wear · return · <strong>cleaning</strong>. Labelled <em>cleaning</em>, never <em>booked</em></td></tr>
+      <tr><td class="mono">PhotoInput</td><td>two modes: <code>persist</code> for the lender, <code>ephemeral</code> for the borrower — posted inline, never written to storage</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Four rules the frontend does not get to break</h3>
+  <ul class="rules">
+    <li><b>The server owns slot state.</b> The browser holds a <code>conversation_id</code> and a message list. Two state machines that must agree is the bug that eats Sunday morning.</li>
+    <li><b>No date arithmetic in the browser, not even for display.</b> <code>ship_by</code>, <code>lands_on</code> and <code>free_again</code> arrive as ISO strings. The moment the UI computes a date, "computed in exactly one place" stops being true — and that sentence is the pitch.</li>
+    <li><b>No model calls from the browser.</b> Keys stay server-side and the graph stays the only orchestrator.</li>
+    <li><b>The borrower's reference photo never reaches storage.</b> Read into vocabulary, then dropped. Enforced at the endpoint — and the frontend must not helpfully cache it.</li>
+  </ul>
+
+  <h3>The contract</h3>
+  <pre class="calc"><span class="k">POST</span> /api/conversations              → { conversation_id, role }
+<span class="k">POST</span> /api/conversations/{id}/turn    → text/event-stream
+                                     <span class="c">multipart: text + optional image</span>
+<span class="k">GET</span>  /api/garments/{id}
+<span class="k">GET</span>  /api/garments/{id}/availability?wear=…
+<span class="k">POST</span> /api/listings/{id}/publish
+<span class="k">POST</span> /mcp                            <span class="c">MCP, streamable HTTP</span></pre>
+  <p>SSE events are a discriminated union — <code>token</code> · <code>question</code> · <code>listing_draft</code> · <code>results</code> · <code>availability</code> · <code>booking_claim</code> · <code>error</code> · <code>done</code>. Generate the TypeScript types from the Pydantic models once; twenty minutes buys the removal of every "the card rendered blank" bug.</p>
+</section>
+
+<section id="engine">
+  <h2><span class="num">03 · The engine</span>A rental is two journeys, and only one of them is visible</h2>
+  <p class="lede">Pure functions. No session, no model, no clock except a parameter. First thing built, and the only thing with real test coverage.</p>
+
+  <pre class="calc"><span class="c">BUFFER_DAYS = 1        # baked in, never shown to the borrower</span>
+
+<span class="k">ship_by</span>     = wear_date − delivery_days − BUFFER_DAYS
+<span class="k">lands_on</span>    = ship_by + delivery_days        <span class="c">#  ==  wear_date − 1</span>
+<span class="k">back_by</span>     = return_date + return_days
+<span class="k">free_again</span>  = back_by + cleaning_days
+
+<span class="k">hold</span>(request) = [ ship_by , free_again ]     <span class="c"># the whole footprint</span>
+<span class="k">hold</span>(booking) = [ b.ship_by , b.free_again ]
+
+<span class="k">feasible</span>  ⟺  today ≤ ship_by
+          ∧  hold ⊆ [available_from, available_to]
+          ∧  ∀ b ∈ bookings :  hold ∩ hold(b) = ∅
+          ∧  requested_sizes ∩ sizes_eu ≠ ∅
+          ∧  garment.city = request.city</pre>
+
+  <h3>Every refusal is an enum, never prose</h3>
+  <div class="enums">
+    <span class="enum">TOO_LATE_TO_SHIP</span>
+    <span class="enum">OUTSIDE_LENDER_WINDOW</span>
+    <span class="enum">OVERLAPS_BOOKING</span>
+    <span class="enum hi">IN_CLEANING</span>
+    <span class="enum">SIZE_MISMATCH</span>
+    <span class="enum">WRONG_CITY</span>
+  </div>
+  <p><code>IN_CLEANING</code> earns its own value for one reason: it lets the UI say <em>cleaning</em> and lets the agent say <em>"it's back from the wedding on Monday but not out of cleaning until Wednesday"</em> — SPEC's low-cost realism point, delivered from data rather than flavour text.</p>
+
+  <p class="pull">The model receives <span class="mono">{reason, ship_by, lands_on, free_again}</span> and writes a sentence. It is explaining arithmetic it did not do and cannot override.</p>
+
+  <h3>What the data model owes the operations</h3>
+  <p><code>delivery_days</code>, <code>return_days</code>, <code>cleaning_days</code> and <code>condition_note</code> are not estimates we invented — they are what SPEC §4 says logistics, cleaning and inspection actually take. That is the difference between a modelled domain and made-up numbers, and it is the sentence to use when a judge pushes. Image rows of kind <code>original</code> are <strong>never updated or deleted</strong>: they are the evidence record the cover mechanism depends on.</p>
+  <p>No vector store. A hard filter over the 386 records is a list comprehension running in under a millisecond, and on the hero query it cuts 386 down to <strong>24</strong>. The hard filter is not a preliminary step before the interesting part — it is what keeps the interesting part cheap enough to be one LLM call.</p>
+</section>
+
+<section id="store">
+  <h2><span class="num">03a · The store</span>JSON, and that is a decision rather than a shortcut</h2>
+  <p class="lede">Runtime is in-memory. JSON is the seed and snapshot format — not "read the file on every query."</p>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Piece</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">backend/data/catalog.json</td><td>read-only seed, in git — 386 records, ~500 KB</td></tr>
+      <tr><td class="mono">backend/data/state/bookings.json</td><td>written at runtime — <strong>new</strong> bookings only</td></tr>
+      <tr><td class="mono">backend/data/state/listings.json</td><td>written at runtime — garments published during the demo</td></tr>
+      <tr><td class="mono">boot</td><td>load → Pydantic models with real <code>date</code> fields → dicts keyed by id</td></tr>
+      <tr><td class="mono">reads</td><td>list comprehensions over ≤50 objects</td></tr>
+      <tr><td class="mono">writes</td><td>mutate memory, then atomic snapshot — <code>tmp</code> + <code>os.replace()</code></td></tr>
+      <tr><td class="mono">reset</td><td>delete <code>data/state/</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Why it costs the architecture nothing</h3>
+  <ol class="steps">
+    <li><strong>The availability engine is already store-free</strong> — no session, no clock except a parameter. Swapping the store touches layer 4 and nothing else.</li>
+    <li><strong>Nothing in the query path needs SQL.</strong> A vector store was already rejected; a hard filter over 386 records is a sub-millisecond list comprehension.</li>
+    <li><strong>No database constraint was load-bearing.</strong> The overlap check lives in the pure domain layer on purpose, so Postgres was not enforcing anything we lose.</li>
+  </ol>
+
+  <div class="finding note">
+    <div class="f-head"><h3>Never rewrite <code>catalog.json</code> on a booking</h3><span class="sev note">rule</span></div>
+    <p>Runtime writes go to the small <code>state/</code> files and are merged over the seed at load. Rewriting 500 KB on every booking is wasted work, and it widens the window in which a killed process leaves a corrupt file — the file it would corrupt being the entire catalogue.</p>
+  </div>
+
+  <p><strong>An honest correction to the case for JSON.</strong> At 386 records and 500 KB, "hand-edit the seed during rehearsal" is no longer the clean lever it would be at 15 records. Make <code>today</code> an injectable parameter instead — the engine already takes no clock except a parameter, so a <code>--demo-date</code> flag shifts the entire demo without touching data. Editing one lender's <code>booked</code> block stays easy; shifting the demo date should not require editing anything at all.</p>
+
+  <h3>The write path — booking is real, so this is the part that must be right</h3>
+  <p>Booking ships this weekend on both sides, so writes come from two places — <code>create_booking</code> and <code>publish_listing</code> — and a booking must block every other borrower <strong>immediately</strong>. The first risk is no longer file corruption. It is time-of-check / time-of-use.</p>
+
+  <pre class="calc"><span class="c">WRONG</span>   feasibility check … then  lock → write → unlock
+        <span class="c">both requests pass the check, then both write. Double booking.</span>
+
+<span class="k">RIGHT</span>   lock → re-check feasibility → commit → snapshot → unlock
+        <span class="c">one critical section covering check AND commit.</span></pre>
+
+  <p class="pull">Concurrency safety comes from the critical section, not from the storage engine — which is exactly why JSON is not weaker than SQLite here.</p>
+
+  <h3>Six conditions, ordered by how much damage each prevents</h3>
+  <ol class="steps">
+    <li><strong>One <code>asyncio.Lock</code> wrapping feasibility re-check + commit</strong>, shared by both write paths.</li>
+    <li><strong>Pin <code>uvicorn --workers 1</code>.</strong> Two workers means two in-memory states and silent double bookings. One container was already the choice for SSE, so this costs nothing — but pin it explicitly, or someone optimises it on Sunday.</li>
+    <li><strong>Atomic writes</strong> — temp file plus <code>os.replace()</code>. A truncated JSON file from a process killed mid-write is unrecoverable at the worst possible moment.</li>
+    <li><strong>Snapshot on every commit, not on shutdown.</strong> If a booking is made on stage and the process restarts, that booking must still be there — otherwise the demo contradicts its own central claim.</li>
+    <li><strong>An idempotency key on <code>create_booking</code>.</strong> A double-tap on a phone is now a real double-booking path.</li>
+    <li><strong>Parse dates exactly once, at boot.</strong> JSON has no date type and this product is entirely date arithmetic; <code>str</code> versus <code>date</code> is the worst bug available here. Through Pydantic it comes out <em>safer</em> than raw driver rows.</li>
+  </ol>
+
+  <h3>The one thing Postgres could do that JSON cannot</h3>
+  <p>Make double booking structurally impossible rather than code-enforced:</p>
+  <pre class="calc">EXCLUDE USING gist (garment_id WITH =, daterange(ship_by, free_again) WITH &amp;&amp;)</pre>
+  <p>Worth knowing, deliberately not done. It duplicates logic that lives in the domain layer by design, so it is a belt-and-braces measure — not a reason to run a database for a demo.</p>
+
+  <div class="finding note">
+    <div class="f-head"><h3>Payment stays out; the hold is real</h3><span class="sev note">wording</span></div>
+    <p>This is not a fake booking — the garment genuinely disappears from everyone else's results. Only the money is absent. The UI and the MCP tool description must both say <code>reserved · no payment taken</code>. A real hold misread as a paid rental is a trust problem, not a copy problem.</p>
+  </div>
+
+  <p><strong>How to say it on stage:</strong> "an in-memory store behind a repository interface — Postgres is a config swap." Not "we used a JSON file." Keep the repository interface identical to what a SQLAlchemy version would expose, and Postgres becomes a day-one task afterwards rather than a rewrite.</p>
+</section>
+
+<section id="data">
+  <h2><span class="num">03b · The data</span>What is actually in <code>catalog.json</code></h2>
+  <p class="lede">386 records, one flat array, ~500 KB. Every count on this page was measured from that file rather than assumed.</p>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Field</th><th>Distribution as it stands</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">category</td><td>dress 250 · jewellery 95 · bag 41</td></tr>
+      <tr><td class="mono">owner_city</td><td>Hamburg 285 · Bremen 26 · Lübeck / Hannover / Kiel 25 each</td></tr>
+      <tr><td class="mono">sizes_eu</td><td>36 → 160 · 38 → 154 · 40 → 110 · 34 → 82 · 42 → 44 · 44 → 34 · <strong>empty on exactly the 136 accessories</strong></td></tr>
+      <tr><td class="mono">delivery_days</td><td>1 → 132 · 2 → 126 · 3 → 128 — <strong>the spread is the most valuable property in the file</strong></td></tr>
+      <tr><td class="mono">return_days · cleaning_days · rental_days</td><td><strong>2 · 1 · 4 on all 386 records</strong> — no variation at all</td></tr>
+      <tr><td class="mono">formality</td><td>4 → 201 · 5 → 177 · 2 → 6 · 3 → 2</td></tr>
+      <tr><td class="mono">rental_price</td><td>min €20 · median €85 · max €360 · 138 above €100</td></tr>
+      <tr><td class="mono">colour_family</td><td>18 values, <strong>null on 88</strong> (60 jewellery, 18 dresses, 10 bags)</td></tr>
+      <tr><td class="mono">booked</td><td>759 blocks across all records, 2–6 days each, spanning 15 Sep – 1 Nov</td></tr>
+      <tr><td class="mono">owner_id</td><td>15 lenders, denormalised onto every record; ~10 accessories each in Hamburg</td></tr>
+      <tr><td class="mono">condition</td><td>excellent 257 · very good 129</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>The real occasion vocabulary — six values, not the PRD's ten</h3>
+  <p>The <code>SCREAMING_SNAKE</code> enum list in <code>dress-rental-prd.md</code> §8 is obsolete. Normalise free text onto these six and nothing else:</p>
+  <div class="enums">
+    <span class="enum">gala <span class="mono">330</span></span>
+    <span class="enum">party <span class="mono">222</span></span>
+    <span class="enum">formal <span class="mono">191</span></span>
+    <span class="enum">engagement <span class="mono">146</span></span>
+    <span class="enum">wedding <span class="mono">137</span></span>
+    <span class="enum hi">weekend <span class="mono">26</span></span>
+  </div>
+  <p>Five of the six are formal-ish, so occasion is a <em>weak</em> discriminator. The relaxation ladder should drop occasion early, not late.</p>
+
+  <h3>Computed on load, never stored in the seed</h3>
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Derived</th><th>From, and why</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">is_sized</td><td><code>category == "dress"</code>. The 136 accessories have no <code>sizes_eu</code> and must <strong>skip</strong> the size filter, not fail it — otherwise <code>suggest_bundle</code> returns nothing and the clutch never appears</td></tr>
+      <tr><td class="mono">hold_from · hold_to</td><td>each <code>booked</code> block, expanded by the legs. <strong>This is a decision you have to make explicitly</strong> — see the finding below</td></tr>
+      <tr><td class="mono">available_from · available_to</td><td><strong>absent from the data.</strong> Default to <code>today … today + 120d</code>, or drop that clause from the feasibility test — a silently always-true condition is worse than an absent one</td></tr>
+      <tr><td class="mono">lenders index</td><td>group by <code>owner_id</code>, required for <code>suggest_bundle</code> and every lender-side view</td></tr>
+      <tr><td class="mono">thumb</td><td>one image per record, no thumbnail. Generate at load or in the worker</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><strong>Fields to delete rather than leave as hooks:</strong> <code>colour_raw</code> (null on all 386), <code>image_local</code> (byte-identical to <code>image</code> on every record), <code>rental_price_try</code> (used nowhere in the flow).</p>
+</section>
+
+<section id="graphs">
+  <h2><span class="num">04 · Agent graphs</span>The gate is four lines of Python, and it is the product</h2>
+  <figure>
+    <div class="plate">
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> extract
+  extract : extract_slots (LLM → JSON)
+  extract --> gate
+  gate : gate — CODE, not prompt<br/>have wear_date AND sizes_eu?
+  gate --> ask : missing
+  ask : ask_missing (max 2 fields, one message)
+  ask --> [*] : wait for the user
+  gate --> search : complete
+  search : search_garments (tool)<br/>hard constraints applied INSIDE
+  search --> empty : 0 feasible
+  search --> rank : 1 or more feasible
+  empty : explain_no_result<br/>check_availability on near misses
+  empty --> relax
+  relax : relax ONE axis, retry once<br/>never city, never dates
+  relax --> search
+  rank : rank (LLM, max 20 candidates, ONE call)
+  rank --> compose
+  compose : compose_answer<br/>reasons from enums + dates
+  compose --> [*] : results shown
+  [*] --> book : explicit user turn — gated in CODE
+  book : create_booking<br/>re-check feasibility INSIDE the lock
+  book --> [*] : hold written, no payment
+</pre>
+    </div>
+    <figcaption>Figure 2 — BorrowerGraph. <span class="mono">if not (s.wear_date and s.sizes_eu)</span> is the whole guarantee</figcaption>
+  </figure>
+
+  <h3>LenderGraph, and the map that makes corrections win</h3>
+  <p>Photo → persist original → <strong>one</strong> multimodal call producing the full draft JSON → draft card → user replies in plain language → LLM emits a JSON patch → <strong>code</strong> merges it. State carries <code>provenance: {field: "vision" | "user"}</code>, and that map — not a prompt instruction — is what makes "the correction always wins" mechanical. It also drives the <code>from photo</code> / <code>you said</code> badges and the <code>size_unverified</code> flag.</p>
+  <p>Graph state is JSON and persists to <code>conversations.slots</code>. Printable state is worth more than any other debugging affordance on a hackathon weekend, and it is also what <code>explain_availability</code> and a state dump expose to a judge.</p>
+</section>
+
+<section id="mcp">
+  <h2><span class="num">05 · MCP service</span>One registry, bound in-process and served over HTTP</h2>
+  <p class="lede">Our own graphs call the backend through the same tool definitions a stranger's agent gets. One decorator is the source of truth; two thin adapters read it.</p>
+
+  <pre class="calc"><span class="k">@tool</span>(name=<span class="c">"check_availability"</span>,
+      input=CheckAvailabilityIn, output=Feasibility,
+      scope=<span class="c">"read"</span>, internal=<span class="k">True</span>, external=<span class="k">True</span>)
+<span class="k">def</span> check_availability(garment_id, wear_date, return_date=None) -> Feasibility: ...
+
+adapters/langgraph_tools.py   <span class="c"># binds in-process — no HTTP hop</span>
+adapters/mcp_server.py        <span class="c"># FastMCP app at /mcp — external=True only</span></pre>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Tool</th><th>Scope</th><th>Returns</th><th>Internal</th><th>External</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">search_garments</td><td>read</td><td><strong>feasible garments only</strong>, each with its Feasibility and rank score</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td class="mono">check_availability</td><td>read</td><td><code>{feasible, ship_by, lands_on, free_again, reason?}</code></td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td class="mono">get_garment</td><td>read</td><td>full garment + image URLs</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td class="mono">explain_availability</td><td>read</td><td>the four legs, every booking considered, and why each did or didn't clash</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td class="mono">suggest_bundle</td><td>read</td><td>same-lender accessories clearing the same deadline as <strong>one</strong> delivery</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td class="mono">create_booking</td><td class="mono">booking:write</td><td>a <strong>real hold</strong> on the garment — <strong>no payment taken</strong></td><td class="yes">✓</td><td class="yes">scoped</td></tr>
+      <tr><td class="mono">draft_listing_from_photo</td><td>write</td><td>ListingDraft</td><td class="yes">✓</td><td class="no">—</td></tr>
+      <tr><td class="mono">patch_listing · publish_listing</td><td>write</td><td>ListingDraft · garment_id</td><td class="yes">✓</td><td class="no">—</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Five rules that make the boundary trustworthy</h3>
+  <ol class="steps">
+    <li><strong>Hard constraints live inside <code>search_garments</code>.</strong> There is no <code>include_infeasible</code> flag and there never will be. A third-party agent cannot surface a dress that misses Friday even if its own prompt tells it to.</li>
+    <li><strong>Every result carries the arithmetic.</strong> <code>ship_by</code> and <code>lands_on</code> ride along on each match, so any caller's explanation is grounded in our numbers.</li>
+    <li><strong>No tool returns prose.</strong> Reasons are enums plus dates. Sentence-writing is the caller's job — which is precisely why a foreign agent's sentences come out as truthful as ours.</li>
+    <li><strong>Reference photos never cross as a stored ref.</strong> <code>style_hints</code> are already-extracted vocabulary tokens, so "used and discarded, never stored" survives the boundary by construction.</li>
+    <li><strong><code>create_booking</code> writes a real hold and takes no money — the description says both, in words.</strong> The garment genuinely vanishes from everyone else's results; only payment is absent. A vague description lets a foreign agent imply the rental is paid for, which is a trust problem rather than a copy problem.</li>
+  </ol>
+  <p>Auth is an API key mapped to a scope set: default keys read-only, <code>booking:write</code> issued separately and rate-limited, writes idempotent on a caller-supplied key.</p>
+
+  <h3>The cost of binding in-process, and the fix</h3>
+  <p>Our own traffic never exercises the MCP transport, so a serialisation bug can hide until a judge plugs in Claude Desktop. One contract test closes it: run every <code>external=True</code> tool through the HTTP server against the same fixtures the unit tests use. Twenty minutes, then leave it in CI.</p>
+
+  <p class="pull">Someone installs borrowed in their own Claude and asks <em>"can any of these reach me by Friday?"</em> — and gets an honest answer from a service they have no prompt control over.</p>
+  <p>That reframes the weekend from <em>a chat UI over a catalogue</em> to <em>a deterministic availability service with a conversational client</em> — a considerably harder thing to have built in two days.</p>
+</section>
+
+<section id="images">
+  <h2><span class="num">06 · Image pipeline</span>Beside the request, never inside it</h2>
+  <ol class="steps">
+    <li>Segment the garment onto a consistent neutral ground — the same off-white for every listing.</li>
+    <li>Normalise crop, aspect and scale so a grid reads as a collection instead of a classifieds board.</li>
+    <li>Correct exposure and white balance. Not cosmetic: <strong>wrong white balance produces the wrong colour, and colour is a filter field.</strong> A navy dress shot under tungsten becomes unfindable.</li>
+    <li>Write a full-size listing image and a 400px thumbnail.</li>
+  </ol>
+  <ul class="rules">
+    <li class="key"><b>Extraction always runs on the original.</b> Any colour processing upstream of extraction produces the bug where the photo shows bright blue and the match was computed as navy.</li>
+    <li class="key"><b>Publish never waits.</b> A 10–20 second upload stall kills the demo. The original is the cover until the normalised version replaces it; on failure it silently stays the cover.</li>
+    <li class="key"><b>Normalise presentation, never the garment.</b> No colour deepening, no fabric smoothing, no removing a pull or a stain. Crossing that line turns a rental service into a misrepresentation.</li>
+    <li class="key"><b>The corrected colour is confirmed by the lender before publish</b>, and condition is always declared in words rather than inferred from a clean-looking photo.</li>
+  </ul>
+  <p>One asyncio queue in the same process is enough at this scale. No Celery, no Redis — not this weekend.</p>
+</section>
+
+<section id="build">
+  <h2><span class="num">07 · Build order</span>Ordered so the thing everything depends on exists first</h2>
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>#</th><th>Task</th><th>Est.</th><th>Needs</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">1</td><td><strong>Availability engine + size mapping — pure, unit-tested</strong>, no DB, no LLM</td><td class="mono">60m</td><td class="mono">—</td></tr>
+      <tr><td class="mono">2</td><td>Loader over <code>catalog.json</code> → Pydantic models, derived fields, and the <code>booked</code> decision</td><td class="mono">45m</td><td class="mono">1</td></tr>
+      <tr><td class="mono">3</td><td>Tool registry + <code>search_garments</code> / <code>check_availability</code>, curl-testable</td><td class="mono">60m</td><td class="mono">1, 2</td></tr>
+      <tr><td class="mono">4</td><td>BorrowerGraph: extract → gate → search → rank → compose</td><td class="mono">120m</td><td class="mono">3</td></tr>
+      <tr><td class="mono">5</td><td>Frontend borrower chat + three result cards + timeline</td><td class="mono">150m</td><td class="mono">3</td></tr>
+      <tr><td class="mono">6</td><td>LenderGraph: photo → draft → one correction → publish</td><td class="mono">90m</td><td class="mono">3</td></tr>
+      <tr><td class="mono">7</td><td><strong>Booking, both sides</strong> — locked write path, code-gated booking turn, confirm step, lender sees the incoming hold and her <code>ship by</code> date</td><td class="mono">120m</td><td class="mono">3–6</td></tr>
+      <tr><td class="mono">8</td><td><strong>MCP HTTP server</strong> (same registry, ~30 lines) + Claude Desktop config</td><td class="mono">45m</td><td class="mono">3</td></tr>
+      <tr><td class="mono">9</td><td>Image normalisation worker + fallback</td><td class="mono">60m</td><td class="mono">6</td></tr>
+      <tr><td class="mono">10</td><td>End-to-end, then rehearse every fallback path — <strong>including the two-window booking demo</strong></td><td class="mono">90m</td><td class="mono">4–9</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="cut">
+    <span class="step">cut 9 first</span><span class="arr">→</span>
+    <span class="step">then LenderGraph's ask-back increment</span><span class="arr">→</span>
+    <span class="step">then suggest_bundle</span>
+    <span class="step never">never cut 1, 3, 4, 5, 7</span>
+  </div>
+  <p>Booking was not in the original nine tasks and it is not free — 120 minutes across five places. That time comes out of task 9, so the image pipeline falls back to original photos, which was already first on the cut list.</p>
+  <p>Note where 8 sits. MCP is a 45-minute task <em>because</em> of 3. Without a single registry it becomes a three-hour job and gets cut — which is why the registry, not the MCP server, is the actual architectural decision.</p>
+
+  <h3>The cheap win on the lender side</h3>
+  <p>SPEC §4.1: <em>the lender is told her ship-by date, not asked for one.</em> One line on her garment card — <code>ship by Wed 16 Sep</code> — closes the loop from borrower booking to engine arithmetic to lender action. A few lines of code for a complete causal chain a judge can watch happen.</p>
+
+  <h3>The strongest moment in the demo</h3>
+  <p>Two browser windows side by side. Book in one; the dress disappears from the other's results in the same second. SPEC §3.2 step 8 stops being a sentence in a document and becomes something done on stage. It needs both windows on the same process — condition 2 in <a href="#store">The store</a> — and it needs rehearsing, because it is also the moment a double-booking bug would surface.</p>
+</section>
+
+<section id="findings">
+  <h2><span class="num">08 · Findings</span>Read this before seeding data</h2>
+  <p class="lede">Measured against the real <code>catalog.json</code> and against SPEC's own scenario dates. Two are demo-breaking; one earlier finding is now closed by the data.</p>
+
+  <h3>The hero query, run against the actual catalogue</h3>
+  <p>Today Wed 16 Sep · wear Fri 18 Sep · Hamburg · EU 38 · dresses:</p>
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Outcome</th><th>Count</th><th></th></tr></thead>
+    <tbody>
+      <tr><td class="mono">FEASIBLE</td><td class="mono"><strong>24</strong></td><td>the demo works — there are real answers</td></tr>
+      <tr><td class="mono">TOO_LATE_TO_SHIP</td><td class="mono">72</td><td><strong>the largest single refusal is delivery</strong></td></tr>
+      <tr><td class="mono">SIZE_MISMATCH</td><td class="mono">69</td><td></td></tr>
+      <tr><td class="mono">WRONG_CITY</td><td class="mono">66</td><td></td></tr>
+      <tr><td class="mono">OVERLAPS_BOOKING</td><td class="mono">19</td><td></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="pull">72 garments are excluded because they cannot physically arrive. That is the product's entire thesis, measured, in one number. Put it on a slide.</p>
+
+  <div class="finding block">
+    <div class="f-head"><h3>The dress the demo script names is one the engine refuses</h3><span class="sev block">blocking</span></div>
+    <p>SPEC Scenario A has Lena declaring her gown <em>"booked the 20th to the 25th"</em>; Scenario B rents <strong>that same gown</strong> for a Friday-the-18th wedding.</p>
+    <p>The catalogue reproduces the collision slightly differently: <code>item-0000</code> belongs to Lena and carries <code>booked: 2026-09-16 → 2026-09-21</code>, squarely across the hero window. It comes back <code>OVERLAPS_BOOKING</code> — one of the 19. The script's line <em>"one of them was listed by Lena an hour earlier"</em> is currently false.</p>
+    <div class="fix"><b>Fix — pick one</b>Move <code>item-0000</code>'s block clear of the window (27 Sep → 2 Oct makes it feasible, <code>lands_on</code> = Thu 17 Sep, verified). Or rewrite Scenario A around whichever of the 24 feasible dresses you want on screen, and give <em>that</em> one to Lena. The second is better — it means the demo reads the data instead of the data being bent to the demo.</div>
+  </div>
+
+  <div class="finding block">
+    <div class="f-head"><h3><code>booked</code> semantics are undefined — decide this first</h3><span class="sev block">blocking</span></div>
+    <p>Nothing says whether a <code>booked</code> range is the <strong>wear window</strong> the lender declared or the <strong>full hold</strong> including shipping, return and cleaning. The two readings differ, and not by a rounding margin:</p>
+    <div class="tscroll">
+    <table>
+      <thead><tr><th>Hamburg EU 38 dresses</th><th>read raw</th><th>expanded by the legs</th></tr></thead>
+      <tbody>
+        <tr><td>Fri 18 Sep</td><td class="mono">24 feasible</td><td class="mono">22 feasible</td></tr>
+        <tr><td>Fri 25 Sep</td><td class="mono">58 feasible</td><td class="mono"><strong>34 feasible</strong></td></tr>
+        <tr><td>Fri 2 Oct</td><td class="mono">58 feasible</td><td class="mono"><strong>38 feasible</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="fix"><b>Recommendation</b>Treat <code>booked</code> as the wear window and expand it on load into <code>hold_from = from − delivery_days − 1</code> and <code>hold_to = to + return_days + cleaning_days</code>. Block lengths run 2–6 days, which reads as wear periods rather than footprints; an lender declares the days she needs the dress, not the days the platform needs it; and it is the conservative reading, so the failure mode is "one fewer dress shown" rather than "double-booked". Whichever way it goes, write the decision into the loader — the same expansion has to apply when a new booking is written, or the two disagree.</div>
+  </div>
+
+  <div class="finding note">
+    <div class="f-head"><h3><code>delivery_days = 2</code> kills the hero query</h3><span class="sev note">closed by the data</span></div>
+    <p>Previously flagged as blocking. The catalogue splits <code>delivery_days</code> across 1, 2 and 3, and 43 of the Hamburg EU-38 dresses ship in a single day, so the hero query survives — and the 2s and 3s are exactly what produce the 72 <code>TOO_LATE_TO_SHIP</code> refusals.</p>
+    <div class="fix"><b>Resolution</b>No change needed. Do <strong>not</strong> normalise <code>delivery_days</code> to one value to "fix" the refusals — the spread is the most valuable property in the file.</div>
+  </div>
+
+  <div class="finding note">
+    <div class="f-head"><h3>Two feasibility clauses have no data behind them</h3><span class="sev note">resolve</span></div>
+    <p><code>available_from</code> / <code>available_to</code> exist on no record, so <code>hold ⊆ [available_from, available_to]</code> compares against nothing. And <code>formality</code> does not discriminate: 378 of 386 records are 4 or 5, so Mira's <em>"quite formal"</em> removes eight items from the catalogue.</p>
+    <div class="fix"><b>Resolution</b>Default the availability window to <code>today … today + 120d</code> on load, or drop the clause and say so. Use <code>formality</code> for ranking only — never for hard filtering, and do not ask the borrower for it as though it narrowed anything.</div>
+  </div>
+
+  <div class="finding note">
+    <div class="f-head"><h3>Nulls the filters must tolerate</h3><span class="sev note">resolve</span></div>
+    <p><code>colour_family</code> is null on 88 records, 18 of them dresses; <code>silhouette</code> null on 41; <code>style_tags</code> empty on 112.</p>
+    <div class="fix"><b>Resolution</b>Treat null as <strong>unknown, do not exclude</strong>. A missing colour must cost a dress ranking points, never remove it from a query that mentions a colour — excluding on null silently shrinks the catalogue by a quarter.</div>
+  </div>
+
+  <div class="finding note">
+    <div class="f-head"><h3>Image provenance — decide before anything is public</h3><span class="sev note">decide</span></div>
+    <p>Every record carries a <code>source_url</code> and an <code>image_url</code> pointing at a live commercial rental site, plus <code>rental_price_try</code> beside the euro price. The images are mirrored into <code>backend/images/</code>, so nothing is hot-linked at runtime — but <code>dress-rental-prd.md</code> §14 asks for imagery that avoids copyright risk, and third-party product photography with the original product URL attached does not meet that on its own.</p>
+    <div class="fix"><b>Options, least work first</b>Keep the data private to the demo and say plainly on stage that the catalogue is scraped placeholder content. Or swap the dozen garments that actually appear on screen for own or openly-licensed photographs and leave the rest as unshown filler. Either is fine; a public deployment that serves them without comment is not.</div>
+  </div>
+
+  <div class="finding note">
+    <div class="f-head"><h3>SPEC contradicts itself on the delivery floor</h3><span class="sev note">resolve</span></div>
+    <p>§2.4 says <em>"three days is the floor"</em>; Scenario B is two days out.</p>
+    <div class="fix"><b>Resolution</b>The engine has no floor. It computes and answers honestly, including "no". Three days is a targeting claim about who the product is designed around — implementing it as a constraint would reject the spec's own hero query.</div>
+  </div>
+
+  <div class="finding note">
+    <div class="f-head"><h3>The buffer is specified twice</h3><span class="sev note">resolve</span></div>
+    <p>§4.1 says both <code>ship_by = wear_date − delivery_days</code> and "one day of buffer is baked in".</p>
+    <div class="fix"><b>Resolution</b>Pick <code>ship_by = wear_date − delivery_days − 1</code>. That is what makes "arrives Thursday for a Friday wedding" true, and it is what every number on this page assumes.</div>
+  </div>
+
+  <h3>Operational risks</h3>
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Re-rank latency</td><td>cap candidates at 20, one call, stream a "looking" state</td></tr>
+      <tr><td>The vision call is the slowest thing in the product (5–10s)</td><td>stream progress; never block publish on normalisation</td></tr>
+      <tr><td>The model calls <code>create_booking</code> unprompted</td><td>gate it in code on an explicit user turn — not in the prompt</td></tr>
+      <tr><td>A real hold read as a paid rental</td><td><code>reserved · no payment taken</code> in the tool description, the payload <strong>and</strong> the UI</td></tr>
+      <tr><td>Double booking under concurrent borrowers</td><td>one lock around check-and-commit, <code>--workers 1</code> pinned, and the two-window case rehearsed</td></tr>
+      <tr><td>A truncated <code>data/state/*.json</code> kills the demo</td><td>atomic <code>tmp</code> + <code>os.replace()</code> on every snapshot, and <code>data/state</code> on a persistent volume</td></tr>
+      <tr><td>City filter and shipping arithmetic doing the same job</td><td>v1 is Hamburg-only: keep the city filter so Berlin stock can never be offered, and let <code>delivery_days</code> do the real work</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>
+  borrowed · architecture v0.1 · 12 September 2026 · companion to SPEC.md and dress-rental-prd.md
+</footer>
+
+</main>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+(function () {
+  if (!window.mermaid) {
+    document.querySelectorAll('pre.mermaid').forEach(function (el) {
+      el.style.whiteSpace = 'pre';
+      el.style.fontFamily = 'ui-monospace, Menlo, monospace';
+      el.style.fontSize = '12px';
+    });
+    return;
+  }
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    securityLevel: 'loose',
+    flowchart: { htmlLabels: true, curve: 'basis' },
+    themeVariables: { fontFamily: 'IBM Plex Sans, Helvetica Neue, Arial, sans-serif' }
+  });
+})();
+</script>
+</body>
+</html>

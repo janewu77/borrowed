@@ -119,3 +119,5 @@ Total: 250 dresses; plus 136 accessories. The original BACKEND_SPEC / ARCHITECTU
 The smoke script uses a temporary state directory, starts a real HTTP server, issues 20 concurrent bookings, shuts down and restarts the process, then verifies search and idempotent recovery. On exit it stops the server and cleans up temp state. Actual results: `docs/stage1-acceptance-zh.md`.
 
 Stage 2 verification: [阶段 2 验收记录](docs/stage2-acceptance-zh.md).
+
+Stage 3 connects the existing Next.js borrower page to this backend. See [browser demo instructions](docs/stage3-usage-zh.md) for local setup, explicit confirmation, and two-tab conflict verification.

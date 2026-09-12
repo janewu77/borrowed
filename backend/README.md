@@ -1,6 +1,8 @@
-# borrowed backend — Stage 1
+# borrowed backend — Stages 1–2
 
 Structured search → submit booking → immediate hold → survive restart. Python 3.12, FastAPI, Pydantic v2, single-process in-memory dict with JSON snapshots.
+
+Stage 2 adds the OpenAI borrower conversation API. See [Stage 2 setup and API flow](docs/stage2-usage.md) and [中文说明](docs/stage2-usage-zh.md). Configure `OPENAI_API_KEY` and `OPENAI_MODEL` for live conversations.
 
 ## Install & run
 
@@ -92,7 +94,7 @@ Other errors: 422 for invalid requests, 404 `GARMENT_NOT_FOUND`, 409 for availab
 - Catalog is read-only; runtime bookings are saved to `data/state/bookings.json`, version 1, including bookings and the structured request used for idempotency comparison.
 - Each booking re-checks under a lock, updates memory, and saves atomically; on write failure, memory is restored. Corrupt, inconsistent, or duplicate snapshot records fail startup — inspect and restore from backup; do not silently wipe state.
 - Local development and Hackathon single-instance only. This stage has no auth, payment, booking cancellation, database, multi-process coordination, or cross-machine persistence.
-- Stages 2/3 are out of scope, as are LLM, MCP, chat, UI pages, lender flows, listing, styling, and image processing.
+- Stage 2 conversation APIs are implemented. Stage 3 UI pages, MCP, lender flows, listing, styling, model reranking and image processing remain out of scope.
 - Code comments and docstrings are in English.
 
 ## Acceptance vs spec drift
@@ -114,4 +116,6 @@ Total: 250 dresses; plus 136 accessories. The original BACKEND_SPEC / ARCHITECTU
 .venv/bin/python scripts/smoke_stage1.py
 ```
 
-The smoke script uses a temporary state directory, starts a real HTTP server, issues 20 concurrent bookings, shuts down and restarts the process, then verifies search and idempotent recovery. On exit it stops the server and cleans up temp state. Actual results: `docs/stage1-acceptance.md`.
+The smoke script uses a temporary state directory, starts a real HTTP server, issues 20 concurrent bookings, shuts down and restarts the process, then verifies search and idempotent recovery. On exit it stops the server and cleans up temp state. Actual results: `docs/stage1-acceptance-zh.md`.
+
+Stage 2 verification: [阶段 2 验收记录](docs/stage2-acceptance-zh.md).

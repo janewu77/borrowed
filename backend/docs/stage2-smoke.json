@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "transport": "real HTTP/SSE",
+  "llm": "scripted; no OpenAI network call",
+  "missing_fields": ["city", "sizes_eu"],
+  "recommendations": 20,
+  "unconfirmed_booking_created": false,
+  "booking_count_added": 1,
+  "process_restart_restored": true,
+  "idempotent_retry_restored": true,
+  "booked_garment_removed_from_search": true
+}

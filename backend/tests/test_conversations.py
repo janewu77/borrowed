@@ -100,6 +100,23 @@ def test_full_flow_restart_and_idempotency(settings):
     assert settings.catalog_path.stat().st_mtime_ns == seed_mtime
 
 
+def test_follow_up_date_keeps_already_supplied_city_and_size(settings):
+    llm = ScriptedLLM(
+        Extraction(city="Hamburg", sizes_eu=[38], occasion="party"),
+        Extraction(wear_date=DateReference(weekday=4), clear_fields=["city", "sizes_eu"]),
+    )
+    app = create_app(settings, borrower_llm=llm)
+    with TestClient(app) as client:
+        cid = create(client)
+        first = turn(client, cid, text="I have a birthday party in Hamburg. My EU size is 38.")
+        assert event(first, "question")["fields"] == ["wear_date"]
+        second = turn(client, cid, text="This Friday")
+        assert event(second, "results")["hits"]
+        slots = app.state.store.conversations[cid].slots.slots
+        assert slots.city == "Hamburg"
+        assert slots.sizes_eu == [38]
+
+
 @pytest.mark.parametrize("change", [
     {"garment_id": "item-not-recommended"}, {"result_id": "stale"},
     {"confirmed": False}, {"garment_id": None}, {"result_id": None},

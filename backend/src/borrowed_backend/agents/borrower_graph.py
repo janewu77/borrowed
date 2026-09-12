@@ -58,9 +58,9 @@ class BorrowerGraph:
             state = data["state"]
             fields = state.slots.missing()[:2]
             # Emit a usable question even if the language service is unavailable.
-            labels = {"wear_date": "穿着日期（含年份） / wear date (with year)",
-                      "city": "城市 / city", "sizes_eu": "EU 尺码 / EU size"}
-            fallback = "请补充 / Please provide: " + ", ".join(labels[key] for key in fields)
+            labels = {"wear_date": "wear date (including year)",
+                      "city": "city", "sizes_eu": "EU size"}
+            fallback = "Please provide: " + ", ".join(labels[key] for key in fields)
             chunks = []
             try:
                 async with asyncio.timeout(timeout):
@@ -70,7 +70,7 @@ class BorrowerGraph:
                 message = "".join(chunks).strip() or fallback
             except Exception:
                 message = fallback
-                await emit(Error(code="LLM_UNAVAILABLE", message="暂时无法生成回复，请按提示补充信息。"))
+                await emit(Error(code="LLM_UNAVAILABLE", message="I could not generate a reply. Please provide the details requested."))
             result = await save(state, "ask_missing")
             await emit(Question(text=message, fields=fields))
             return result
@@ -92,7 +92,7 @@ class BorrowerGraph:
             context = {"kind": "results" if hits else "no_results", "text": turn.text,
                        "hits": [hit.model_dump(mode="json") for hit in hits[:3]]}
             if not hits:
-                await emit(Token(text="没有符合当前条件的可借商品。可以修改日期、城市、EU 尺码或预算后继续搜索。"))
+                await emit(Token(text="No garments match these details yet. Try another date, city, EU size or budget."))
             async with asyncio.timeout(timeout):
                 async for chunk in self.llm.text_stream(context):
                     await emit(Token(text=chunk))
@@ -107,8 +107,8 @@ class BorrowerGraph:
                     or state.slots.missing()
                     or state.slots.search_request() != state.result_request):
                 await emit(Error(code="CONFIRMATION_REQUIRED", message=(
-                    "请先搜索，并明确确认推荐中的商品；提交 intent=book、garment_id、"
-                    "confirmed=true 和该次 results 的 result_id。预约会立即占用商品，不收取费用。")))
+                    "Search first, then explicitly confirm one of the recommended garments. "
+                    "A reservation holds the garment immediately and takes no payment.")))
                 return await save(state, "book_rejected")
             request = state.result_request
             payload = CreateBookingIn(
@@ -121,7 +121,7 @@ class BorrowerGraph:
             except Conflict as exc:
                 await emit(Availability(feasibility=exc.feasibility,
                                         garment=store.get(turn.garment_id).public()))
-                await emit(Error(code="BOOKING_CONFLICT", message="该商品当前无法预约，请重新搜索或调整日期。"))
+                await emit(Error(code="BOOKING_CONFLICT", message="This garment is no longer available. Search again or adjust the date."))
                 return await save(state, "book_conflict")
             # The booking snapshot is already durable; report success before optional chat persistence.
             await emit(BookingClaim(booking=booking))

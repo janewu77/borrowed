@@ -63,6 +63,11 @@ class Extraction(FrozenModel):
     def merge(self, slots: Slots, today: date) -> Slots:
         values = slots.model_dump()
         for field in self.clear_fields:
+            # City, size and wear date are required to run a search. A later message
+            # that only supplies one missing detail must never discard those already
+            # confirmed values, even if the extraction model emits a stray clear.
+            if field in {"wear_date", "city", "sizes_eu"}:
+                continue
             values[field] = [] if field == "style_hints" else None
         for field in type(self).model_fields:
             value = getattr(self, field)

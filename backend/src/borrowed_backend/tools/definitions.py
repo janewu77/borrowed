@@ -16,6 +16,10 @@ async def search_garments(store: InMemoryStore, req: SearchRequest) -> list[Sear
     for garment in store.garments.values():
         if garment.category != req.category:
             continue
+        if (req.colour_family is not None and
+                (garment.colour_family is None or
+                 garment.colour_family.casefold() != req.colour_family.casefold())):
+            continue
         feasibility = check(garment, req, today)
         if not feasibility.feasible:
             continue

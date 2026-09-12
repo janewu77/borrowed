@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "garments": 386,
+  "feasible_before": 22,
+  "feasible_after": 21,
+  "concurrent_successes": 1,
+  "concurrent_conflicts": 19,
+  "process_restart_restored": true,
+  "idempotent_retry_restored": true,
+  "cli_date_overrides_environment": true,
+  "catalog_unchanged": true,
+  "catalog_sha256": "7a8219a88f360b7351224e5b68b1f4231afc58dcc915b6f43902dd68006d601a",
+  "reserved_garment": "item-0066"
+}

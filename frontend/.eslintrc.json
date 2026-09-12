@@ -1,0 +1,20 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      { "patterns": ["date-fns/add*", "date-fns/sub*"] }
+    ],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "CallExpression[callee.property.name='setDate']",
+        "message": "Date arithmetic belongs to the backend."
+      },
+      {
+        "selector": "CallExpression[callee.property.name='setUTCDate']",
+        "message": "Date arithmetic belongs to the backend."
+      }
+    ]
+  }
+}

@@ -117,6 +117,12 @@ ipython_config.py
 .pdm-python
 .pdm-build/
 
+# Next.js frontend build output and local configuration
+frontend/.next/
+frontend/node_modules/
+frontend/tsconfig.tsbuildinfo
+frontend/.env.local
+
 # pixi
 #   Similar to Pipfile.lock, it is generally recommended to include pixi.lock in version control.
 # pixi.lock

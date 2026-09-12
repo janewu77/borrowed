@@ -1,16 +1,25 @@
-# borrowed — Product Specification
+# MORE — Product Specification
 
 **Version 0.2 · updated 12 September 2026**
 
-A peer-to-peer rental service for occasion wear.
+**MORE — to wear, give, share.** A peer-to-peer rental service for occasion wear.
 
 ---
 
 ## 1. The product
 
-> **In one sentence:** borrowed is a peer-to-peer rental service for occasion
+> **In one sentence:** MORE is a peer-to-peer rental service for occasion
 > wear where both sides talk to an agent instead of filling in forms, and where
 > nothing is ever offered that cannot physically arrive in time.
+
+### The idea behind MORE
+
+We already have more than we think: more clothes in our wardrobes, more occasions
+ahead, and more women with beautiful pieces they no longer wear. MORE unlocks
+that value instead of making buying the default. A dress bought for one wedding
+can travel to another woman, another city and another celebration. It gives the
+things we own more life — more style and possibility with less waste and
+consumption.
 
 ### 1.1 What it does
 
@@ -181,7 +190,7 @@ since. She has thought about selling it and never got round to photographing it
 properly.
 
 **Trigger.** A friend mentions she borrowed a dress for a wedding instead of
-buying one. Lena opens borrowed on her phone that evening, with about two
+buying one. Lena opens MORE on her phone that evening, with about two
 minutes of attention and no intention of filling in a form.
 
 | # | Lena does | The system does |

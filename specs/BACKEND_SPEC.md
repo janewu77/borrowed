@@ -1,4 +1,4 @@
-# borrowed — Backend Implementation Spec
+# MORE — Backend Implementation Spec
 
 **Version 1.0 · 12 September 2026 · derived from `ARCHITECTURE.md` + `SPEC.md`**
 **Audience: an AI coding agent. Every section is implementable without asking questions.**

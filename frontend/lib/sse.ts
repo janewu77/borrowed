@@ -25,12 +25,14 @@ export async function* readSse(body: ReadableStream<Uint8Array>): AsyncGenerator
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let completed = false;
 
   try {
     while (true) {
       const { done, value } = await reader.read();
-      buffer += decoder.decode(value, { stream: !done }).replace(/\r\n/g, "\n");
+      buffer += decoder.decode(value, { stream: !done });
 
+      buffer = buffer.replace(/\r\n/g, "\n");
       let boundary = buffer.indexOf("\n\n");
       while (boundary !== -1) {
         const raw = parseBlock(buffer.slice(0, boundary));
@@ -38,17 +40,21 @@ export async function* readSse(body: ReadableStream<Uint8Array>): AsyncGenerator
         boundary = buffer.indexOf("\n\n");
         if (!raw) continue;
 
-        try {
-          const parsed: unknown = JSON.parse(raw.data);
-          const event = toSseEvent(raw.event, parsed);
-          if (event) yield event;
-        } catch {
-          // A malformed event must not lose the rest of a conversation.
+        const parsed: unknown = JSON.parse(raw.data);
+        const event = toSseEvent(raw.event, parsed);
+        if (event) {
+          if (event.event === "done") completed = true;
+          yield event;
+          if (completed) return;
         }
       }
-      if (done) break;
+      if (done) {
+        if (!completed) throw new Error("The response ended before done.");
+        break;
+      }
     }
   } finally {
+    await reader.cancel().catch(() => undefined);
     reader.releaseLock();
   }
 }
@@ -61,5 +67,5 @@ function toSseEvent(event: string, data: unknown): SseEvent | null {
 }
 
 function isSseEventName(event: string): event is SseEventName {
-  return ["token", "question", "listing_draft", "results", "availability", "booking_claim", "error", "done"].includes(event);
+  return ["token", "question", "results", "availability", "booking_claim", "error", "done"].includes(event);
 }

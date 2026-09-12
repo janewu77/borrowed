@@ -1,7 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- FastAPI supplies a configurable image origin. */
 
-import { useState } from "react";
 import { apiAssetUrl } from "../../lib/api";
 import type { SearchHit } from "../../lib/api-types";
 import { fmtDay, fmtRange } from "../../lib/dates";
@@ -9,10 +8,9 @@ import { fmtDay, fmtRange } from "../../lib/dates";
 export function BookingConfirm({ hit, onCancel, onConfirm }: {
   hit: SearchHit;
   onCancel: () => void;
-  onConfirm: (idempotencyKey: string) => void;
+  onConfirm: () => void;
 }) {
   const { garment, feasibility } = hit;
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
   return (
     <div className="sheet-backdrop" role="presentation">
       <section aria-modal="true" aria-label="Confirm reservation" className="sheet" role="dialog">
@@ -28,9 +26,9 @@ export function BookingConfirm({ hit, onCancel, onConfirm }: {
             {feasibility.lands_on && <Row label="Lands" value={fmtDay(feasibility.lands_on)} />}
             <Row label="Price" value={`€${garment.rental_price} · ${garment.rental_days} days`} />
           </div>
-          <p className="sheet__note">reserved · no payment taken</p>
+          <p className="sheet__note">Confirming places a real hold. No payment is taken and no card is charged.</p>
         </div>
-        <footer className="sheet__actions"><button onClick={onCancel} type="button">Back</button><button className="primary" onClick={() => onConfirm(idempotencyKey)} type="button">Reserve</button></footer>
+        <footer className="sheet__actions"><button onClick={onCancel} type="button">Back</button><button className="primary" onClick={onConfirm} type="button">Confirm reservation</button></footer>
       </section>
     </div>
   );

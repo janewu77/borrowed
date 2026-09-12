@@ -6,8 +6,10 @@ const sizeChips = [34, 36, 38, 40, 42, 44];
 
 export function AgentQuestion({
   question,
+  disabled = false,
   onReply,
 }: {
+  disabled?: boolean;
   question: Extract<SseEvent, { event: "question" }>;
   onReply: (text: string) => void;
 }) {
@@ -23,7 +25,7 @@ export function AgentQuestion({
       {needsSize && (
         <div className="chips" aria-label="Quick size replies">
           {sizeChips.map((size) => (
-            <button key={size} onClick={() => onReply(`My EU size is ${size}`)} type="button">EU {size}</button>
+            <button disabled={disabled} key={size} onClick={() => onReply(`My EU size is ${size}`)} type="button">EU {size}</button>
           ))}
         </div>
       )}

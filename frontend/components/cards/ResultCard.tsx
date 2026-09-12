@@ -6,8 +6,9 @@ import { apiAssetUrl } from "../../lib/api";
 import type { SearchHit } from "../../lib/api-types";
 import { fmtDay } from "../../lib/dates";
 
-export function ResultGrid({ hits, relaxed, onReserve }: {
+export function ResultGrid({ hits, relaxed, onReserve, disabled = false }: {
   hits: SearchHit[];
+  disabled?: boolean;
   relaxed: string | null;
   onReserve: (hit: SearchHit) => void;
 }) {
@@ -15,13 +16,13 @@ export function ResultGrid({ hits, relaxed, onReserve }: {
     <section aria-label="Available garments">
       {relaxed && <p className="relaxed-chip">also showing: {relaxed}</p>}
       <div className="results">
-        {hits.map((hit) => <ResultCard hit={hit} key={hit.garment.id} onReserve={onReserve} />)}
+        {hits.map((hit) => <ResultCard disabled={disabled} hit={hit} key={hit.garment.id} onReserve={onReserve} />)}
       </div>
     </section>
   );
 }
 
-function ResultCard({ hit, onReserve }: { hit: SearchHit; onReserve: (hit: SearchHit) => void }) {
+function ResultCard({ hit, onReserve, disabled }: { disabled: boolean; hit: SearchHit; onReserve: (hit: SearchHit) => void }) {
   const { garment, feasibility } = hit;
   const image = garment.thumb || garment.image;
 
@@ -36,10 +37,9 @@ function ResultCard({ hit, onReserve }: { hit: SearchHit; onReserve: (hit: Searc
         <p className="result-card__lender">{garment.lender_name} · {garment.lender_rating.toFixed(1)} · {garment.city}</p>
         <p className="result-card__price">€{garment.rental_price} · {garment.rental_days} days</p>
         {feasibility.lands_on && <span className="lands-pill">lands {fmtDay(feasibility.lands_on)}</span>}
-        {hit.reason && <p className="result-card__reason">{hit.reason}</p>}
         <div className="result-card__actions">
-          <Link href={`/garment/${encodeURIComponent(garment.id)}?wear=${encodeURIComponent(feasibility.wear_from)}`}>Dates</Link>
-          <button className="primary" onClick={() => onReserve(hit)} type="button">Reserve</button>
+          <Link href={`/garment/${encodeURIComponent(garment.id)}?wear=${encodeURIComponent(feasibility.wear_from)}&return=${feasibility.wear_to}&city=${encodeURIComponent(garment.city)}&sizes=${garment.sizes_eu.join(",")}`}>Details</Link>
+          <button disabled={disabled} className="primary" onClick={() => onReserve(hit)} type="button">Reserve</button>
         </div>
       </div>
     </article>

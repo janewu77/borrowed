@@ -1,12 +1,9 @@
 import { execFileSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
+import openapiTS, { astToString } from "openapi-typescript";
 
-const schemaUrl = process.env.API_SCHEMA_URL ?? "http://localhost:8000/openapi.json";
-
-// Backend must expose its Pydantic/OpenAPI projection before this command is run.
-// The checked-in contract file lets the frontend compile until both applications
-// are available locally; this command replaces it from the canonical schema.
-execFileSync(
-  "npx",
-  ["openapi-typescript", schemaUrl, "--output", "lib/openapi.generated.ts"],
-  { stdio: "inherit" },
-);
+// Export directly from Pydantic so SSE models are included without a running server.
+const raw = execFileSync(process.env.BACKEND_PYTHON ?? "../backend/.venv/bin/python",
+  ["scripts/export_contract.py"], { cwd: "../backend", env: { ...process.env, PYTHONPATH: "src" }, encoding: "utf8" });
+const output = astToString(await openapiTS(JSON.parse(raw), { defaultNonNullable: false }));
+writeFileSync("lib/openapi.generated.ts", output);

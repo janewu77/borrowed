@@ -4,10 +4,12 @@
 
 ## 1. 把代码推送到 GitHub
 
-实际 Git 仓库是 `borrowed`，后端位于 `backend`。本次已添加 `backend/requirements.txt`，引用现有锁定依赖：
+实际 Git 仓库是 `borrowed`，后端位于 `backend`。`backend/requirements.txt` 直接列出完整锁定依赖，与 `requirements.lock.txt` 内容一致。
 
-```text
--r requirements.lock.txt
+Railpack 0.39.0 的依赖安装阶段不会自动复制 `requirements.lock.txt`，因此不能只写 `-r requirements.lock.txt`。更新锁文件后，在仓库根目录同步：
+
+```bash
+cp backend/requirements.lock.txt backend/requirements.txt
 ```
 
 将它和后端代码、`data/catalog.json`、`images/item-*.jpg` 一起提交到准备部署的分支。本文编写时尚未提交、推送或执行云端部署。
@@ -91,7 +93,7 @@ curl --fail-with-body -sS "$BORROWED_API_URL/api/garments/search" \
 
 | 现象 | 先检查 |
 | --- | --- |
-| 构建找不到依赖文件 | Root Directory 是否为 `/backend`，两个 requirements 文件是否都已推送 |
+| 构建找不到依赖文件 | Root Directory 是否为 `/backend`，requirements.txt 是否直接包含完整依赖列表且已推送 |
 | 找不到 Python 模块 | 启动命令是否包含 `--app-dir src` |
 | 502 或健康检查失败 | 启动日志、`0.0.0.0`、`$PORT` 和 `/health` |
 | 重部署后预约丢失 | Volume 是否连接原服务，挂载路径是否与 `STATE_DIR` 一致 |
@@ -102,3 +104,5 @@ curl --fail-with-body -sS "$BORROWED_API_URL/api/garments/search" \
 本文已核对当前源码与官方文档；尚未完成 Railpack 云端构建、发布或持久化验证。
 
 参考：[Railpack Python](https://railpack.com/languages/python)、[Railway 启动命令](https://docs.railway.com/deployments/start-command)、[子目录部署](https://docs.railway.com/deployments/monorepo)、[持久化磁盘](https://docs.railway.com/volumes)。
+
+构建排错依据：[Railpack 0.39.0 Python 源码 copyInstallFiles](https://github.com/railwayapp/railpack/blob/v0.39.0/core/providers/python/python.go#L401-L428)。

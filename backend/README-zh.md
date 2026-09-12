@@ -5,10 +5,17 @@
 ## 安装与启动
 
 ```bash
-cd /Users/jingwu/hackathon-202609/borrowed/backend
+cd borrowed/backend
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements.lock.txt
 PYTHONPATH=src .venv/bin/python -m borrowed_backend --demo-date 2026-09-16
+```
+
+```bash
+conda create -n env_borrowed python=3.12 -y
+conda activate env_borrowed
+python -m pip install -r requirements.lock.txt
+PYTHONPATH=src python -m borrowed_backend --demo-date 2026-09-16
 ```
 
 `requirements.lock.txt` 固定本次验证过的运行和测试依赖。也可安装 Python 包：`.venv/bin/python -m pip install -e '.[test]'`，然后使用 `.venv/bin/borrowed-backend --demo-date 2026-09-16`。
@@ -19,6 +26,12 @@ PYTHONPATH=src .venv/bin/python -m borrowed_backend --demo-date 2026-09-16
 
 ```bash
 DEMO_DATE=2026-09-16 .venv/bin/python -m uvicorn borrowed_backend.main:create_app --factory --app-dir src --host 127.0.0.1 --port 8000 --workers 1
+
+```
+
+```bash
+conda activate env_borrowed
+DEMO_DATE=2026-09-16 python -m uvicorn borrowed_backend.main:create_app --factory --app-dir src --host 127.0.0.1 --port 8000 --workers 1
 ```
 
 可配置环境变量：`DEMO_DATE`、`CATALOG_PATH`、`STATE_DIR`、`IMAGES_DIR`。默认路径以 backend 目录为基准，不依赖启动时的工作目录。非 editable 安装时，应显式配置外部 catalog、图片和状态目录。

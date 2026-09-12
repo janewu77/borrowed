@@ -5,10 +5,17 @@ Structured search → submit booking → immediate hold → survive restart. Pyt
 ## Install & run
 
 ```bash
-cd /Users/jingwu/hackathon-202609/borrowed/backend
+cd borrowed/backend
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements.lock.txt
 PYTHONPATH=src .venv/bin/python -m borrowed_backend --demo-date 2026-09-16
+```
+
+```bash
+conda create -n env_borrowed python=3.12 -y
+conda activate env_borrowed
+python -m pip install -r requirements.lock.txt
+PYTHONPATH=src python -m borrowed_backend --demo-date 2026-09-16
 ```
 
 `requirements.lock.txt` pins the runtime and test dependencies verified for this milestone. You can also install the Python package with `.venv/bin/python -m pip install -e '.[test]'`, then run `.venv/bin/borrowed-backend --demo-date 2026-09-16`.

@@ -1,4 +1,4 @@
-# borrowed — Frontend Implementation Spec
+# MORE — Frontend Implementation Spec
 
 **Version 1.0 · 12 September 2026 · derived from `ARCHITECTURE.md` + `SPEC.md`**
 **Audience: an AI coding agent. Pairs with `specs/BACKEND_SPEC.md`.**

@@ -1,4 +1,4 @@
-# borrowed — Technical Architecture
+# MORE — Technical Architecture
 
 **Version 0.1 · 12 September 2026 · companion to SPEC.md**
 
@@ -623,7 +623,7 @@ the same fixtures the unit tests use. Twenty minutes, run it in CI.
 
 ### 5.4 Why this is worth demo time
 
-Someone installs `borrowed` in their own Claude and asks *"can any of these
+Someone installs `MORE` in their own Claude and asks *"can any of these
 reach me by Friday?"* — and gets an honest answer from a service they have no
 prompt control over. That reframes the project from *a chat UI over a catalogue*
 to *a deterministic availability service with a conversational client*, which is

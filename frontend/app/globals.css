@@ -61,6 +61,16 @@ button, input, textarea { font: inherit; }
 .chips span { padding: .2rem .55rem; border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); background: color-mix(in srgb, var(--accent) 8%, var(--panel)); color: var(--ink); font-weight: 600; }
 .chips button { padding: .5rem .95rem; color: var(--ink); cursor: pointer; font-size: 13px; }
 .chips button:hover { border-color: var(--accent); color: var(--accent); }
+.chips button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: #fff; }
+.agent-question__choices { display: grid; gap: .85rem; }
+.agent-question__choices > div { display: grid; gap: .35rem; }
+.agent-question__choices p { color: var(--muted); font-size: 12px; }
+.agent-question__select { display: grid; width: min(100%, 280px); gap: .35rem; color: var(--muted); font-size: 12px; }
+.agent-question__select > span { color: var(--muted); font-size: 11px; font-weight: 400; }
+.agent-question__select select, .agent-question__select input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); appearance: auto; background: var(--surface); color: var(--ink); }
+.agent-question__select select { padding-right: 30px; }
+.agent-question__select select:focus, .agent-question__select input:focus { border-color: var(--accent); outline: 0; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
+.agent-question__continue { justify-self: start; height: 40px; padding: 0 16px; border: 1px solid var(--accent); border-radius: var(--radius-sm); background: var(--accent); color: #fff; cursor: pointer; }
 
 /* Composer */
 .composer { position: fixed; right: 0; bottom: 0; left: var(--history-width); z-index: 10; padding: 14px 28px 20px; border-top: 1px solid var(--border); background: var(--panel); }
@@ -166,5 +176,5 @@ button, input, textarea { font: inherit; }
 
 .composer__inner--text { grid-template-columns: minmax(0, 1fr) auto; }
 button:disabled { opacity: .5; cursor: not-allowed; }
-button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .chat-main { min-height: 0; }

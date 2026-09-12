@@ -188,10 +188,10 @@ export function ChatStream({ role }: { role: ConversationRole }) {
             {items.map((item, index) => {
               if (item.event === "message" || item.event === "token") return <p key={index} className={`message message--${item.event === "message" ? "borrower" : "assistant"}`}>{item.data.text}</p>;
               if (item.event === "question") return <AgentQuestion disabled={busy} key={index} question={item} onReply={text => send({ text })} />;
-              if (item.event === "results") return <div key={index} ref={item.data.result_id === resultId ? resultsAnchor : undefined}>
+              if (item.event === "results" && item.data.result_id !== resultId) return null;
+              if (item.event === "results") return <div key={index} ref={resultsAnchor}>
                 {!item.data.hits.length && <p role="status">No garments available. Try another wear date, city or size.</p>}
-                {item.data.result_id !== resultId && <p>Previous results — search again for current availability.</p>}
-                <ResultGrid hits={item.data.hits} relaxed={item.data.relaxed ?? null} disabled={busy || item.data.result_id !== resultId}
+                <ResultGrid hits={item.data.hits} relaxed={item.data.relaxed ?? null} disabled={busy}
                   onReserve={hit => setSelection({ hit, resultId: item.data.result_id })} />
               </div>;
               if (item.event === "availability") return <AvailabilityTimeline key={index} {...item.data} />;

@@ -173,6 +173,11 @@ def compute_legs(wear_from, wear_to, delivery_days, return_days, cleaning_days) 
 
 `wear_to` defaults to `wear_from + rental_days - 1` when the borrower gives only one date.
 
+Across all HTTP APIs, tools and graph slots, `wear_date` means `wear_from` and
+`return_date` means `wear_to`: the **last day of wear**, inclusive. It is not the
+return-arrival date. Add `return_days` and `cleaning_days` after it using
+`compute_legs()`; when omitted, use the default above.
+
 ### 3.1 `check(garment, req, today) -> Feasibility`
 
 Evaluate in this exact order and **return on the first failure** (order defines which reason the borrower sees):
@@ -258,6 +263,7 @@ class InMemoryStore:
 
 ```
 async with store._lock:
+    garment = store.garments[garment_id]                     # fetch current copy inside lock
     feas = availability.check(garment, req, store.today())   # RE-CHECK inside the lock
     if not feas.feasible: raise Conflict(feas.reason)
     booking = commit(...)                                    # mutate memory
@@ -267,6 +273,13 @@ return booking
 
 Both `create_booking` and `publish_listing` take the same lock. Never check
 feasibility before acquiring it and trust the result.
+
+`commit(...)` must update both `store.bookings[booking.id]` and the garment's
+`bookings` before releasing the lock. Because `Garment` is frozen, replace it in
+`store.garments` with `garment.model_copy(update={"bookings": [*garment.bookings,
+booking]})`. On startup, rebuild each garment's booking list from the merged
+`store.bookings`, matching `garment_id` and deduplicating by booking ID. Searches
+must read the current garment from the store so a new hold is immediately visible.
 
 ### 5.2 Snapshot (`data/snapshot.py`)
 
@@ -392,6 +405,25 @@ value. **User value always wins — enforced in code, not in the prompt.**
 `store.garments`, snapshots `listings.json`, enqueues image normalisation, and
 returns `ship_by_hint` — the `ship_by` for the nearest declared wear window, so the
 lender card can print `ship by Wed 16 Sep`.
+
+**Hackathon publication defaults:** use one demo lender and fill the fields absent
+from the draft in code, without another LLM call:
+
+| field | value |
+|---|---|
+| `lender_id`, `lender_name`, `lender_rating` | `"lender-demo"`, `"Demo Lender"`, `0.0` (unrated) |
+| `city`, `delivery_days` | draft value; if missing, `"Hamburg"`, `1` |
+| `rental_days`, `return_days`, `cleaning_days` | `4`, `2`, `1` |
+| `sku`, `name_raw`, `designer`, `retail_price` | generated garment ID, draft `name`, `"Unknown"`, `0` (unknown) |
+| `image`, `thumb` | persisted original's local serving URL; use it for `thumb` until normalisation finishes |
+| `source_url`, `image_url`, `image_credit` | `""`, `""`, `None` |
+| `is_sized`, `available_from`, `available_to` | `category == DRESS`, `store.today()`, `store.today() + 120d` |
+| `bookings` | expand draft `booked` with §4.2; empty list if omitted |
+
+Persist the generated garment ID and complete published `Garment` alongside the
+draft in `listings.json`, so the loader can restore it unchanged. Add its bookings
+to `store.bookings` and its ID to the `lenders` index. If no wear window is declared,
+return `ship_by_hint: null`.
 
 ---
 

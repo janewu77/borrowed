@@ -19,6 +19,7 @@
 
 <p>
   <a href="#-the-idea">The idea</a> ·
+  <a href="#-see-it-in-action">Demo video</a> ·
   <a href="#-how-it-feels">How it feels</a> ·
   <a href="#-what-the-ai-decides--and-what-it-does-not">What the AI decides</a> ·
   <a href="#-under-the-hood">Under the hood</a> ·
@@ -50,6 +51,17 @@ extends the value of that piece and gives the next wearer something special
 without another purchase.
 
 > One dress. Many nights. Many women.
+
+## 🎬 See it in action
+
+<div align="center">
+
+<a href="assets/demo.mp4"><img src="assets/demo-poster.png" alt="Watch the MORE demo" width="720"></a>
+
+<sub><b><a href="assets/demo.mp4">▶︎ Watch the 33-second walkthrough</a></b> — from "I need a red dress for my
+birthday party" to a confirmed reservation.</sub>
+
+</div>
 
 ## 👗 How it feels
 

@@ -34,6 +34,10 @@ def load_catalog(path: Path, today: date, images_dir: Path) -> dict[str, Garment
                    if (images_dir / "thumbs" / f"{row['id']}.jpg").is_file()
                    else f"/images/{row['id']}.jpg"),
         )
+        # Each catalogue dress represents one lender-owned item, not shop stock.
+        # Surface one concrete size even when the source storefront lists a range.
+        if row["category"] == Category.DRESS.value:
+            values["sizes_eu"] = values["sizes_eu"][:1]
         bookings = []
         for n, block in enumerate(row["booked"]):
             wear_from, wear_to = date.fromisoformat(block["from"]), date.fromisoformat(block["to"])

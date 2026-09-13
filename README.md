@@ -19,6 +19,7 @@
 
 <p>
   <a href="#-the-idea">The idea</a> ·
+  <a href="#-landing-page">Landing page</a> ·
   <a href="#-see-it-in-action">Demo video</a> ·
   <a href="#-how-it-feels">How it feels</a> ·
   <a href="#-what-the-ai-decides--and-what-it-does-not">What the AI decides</a> ·
@@ -51,6 +52,13 @@ extends the value of that piece and gives the next wearer something special
 without another purchase.
 
 > One dress. Many nights. Many women.
+
+## ✨ Landing page
+
+The visual introduction to MORE is available as a standalone, static page:
+[open the landing page](https://multibear95.github.io/borrowed/demo/). Its
+[source lives in the repository](docs/demo/index.html), together with the three
+catalogue images it uses.
 
 ## 🎬 See it in action
 

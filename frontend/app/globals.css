@@ -178,3 +178,47 @@ button, input, textarea { font: inherit; }
 button:disabled { opacity: .5; cursor: not-allowed; }
 button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .chat-main { min-height: 0; }
+
+/* Garment page */
+.garment-page { min-height: 100dvh; padding: 0 clamp(20px, 5vw, 76px) 52px; background: #f7f3ee; color: #183b33; }
+.garment-nav { display: flex; align-items: center; justify-content: space-between; min-height: 84px; border-bottom: 1px solid #d9d1c8; }
+.garment-nav__brand { color: #183b33; font-family: var(--font-serif); font-size: 21px; letter-spacing: -.025em; text-decoration: none; }
+.garment-nav__back { color: #586b63; font-size: 13px; text-decoration: none; }
+.garment-detail { display: grid; grid-template-columns: minmax(320px, .95fr) minmax(360px, .7fr); gap: clamp(44px, 9vw, 150px); width: min(100%, 1180px); margin: 52px auto 70px; }
+.garment-gallery { margin: 0; }
+.garment-gallery__image { position: relative; display: block; width: 100%; overflow: hidden; padding: 0; border: 0; background: #e8dfd7; cursor: zoom-in; }
+.garment-gallery__image img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; transition: transform .45s ease; }
+.garment-gallery__image:hover img { transform: scale(1.025); }
+.garment-gallery__image span { position: absolute; right: 16px; bottom: 16px; padding: 8px 10px; background: rgb(247 243 238 / 88%); color: #183b33; font-size: 11px; }
+.garment-gallery__caption { margin: 12px 0 0; color: #79837d; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.garment-info { align-self: center; }
+.garment-info__designer, .garment-details > p, .reserve-sheet__eyebrow { margin: 0 0 12px; color: #a05d4b; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.garment-info h1 { max-width: 12ch; margin: 0; font-family: var(--font-serif); font-size: clamp(42px, 5vw, 64px); font-weight: 400; letter-spacing: -.045em; line-height: .97; text-wrap: balance; }
+.garment-info__intro { max-width: 48ch; margin: 25px 0 0; color: #566760; font-size: 15px; line-height: 1.55; }
+.garment-price { display: flex; align-items: baseline; gap: 10px; margin: 28px 0; }
+.garment-price strong { font-family: var(--font-serif); font-size: 30px; font-weight: 400; }
+.garment-price span, .garment-note { color: #68766f; font-size: 13px; }
+.garment-section { padding: 20px 0; border-top: 1px solid #d9d1c8; }
+.garment-section__heading { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; }
+.garment-section__heading p { margin: 0; }
+.garment-section__heading span { color: #68766f; }
+.garment-size { margin: 0; font-size: 15px; }
+.garment-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 0; border-top: 1px solid #d9d1c8; }
+.garment-facts div { display: grid; gap: 6px; padding: 16px 0; border-bottom: 1px solid #d9d1c8; }
+.garment-facts div:nth-child(odd) { padding-right: 16px; }
+.garment-facts div:nth-child(even) { padding-left: 16px; border-left: 1px solid #d9d1c8; }
+.garment-facts div:last-child { grid-column: 1 / -1; padding-left: 0; border-left: 0; }
+.garment-facts dt { color: #7a857f; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+.garment-facts dd { margin: 0; font-size: 13px; text-transform: capitalize; }
+.garment-lender { display: flex; align-items: center; gap: 11px; margin: 20px 0 24px; }
+.garment-lender__avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: #d8b5a7; color: #fff; font-family: var(--font-serif); }
+.garment-lender p { margin: 0 0 3px; font-size: 13px; }
+.garment-lender span { color: #68766f; font-size: 12px; }
+.garment-details { display: grid; grid-template-columns: minmax(160px, .4fr) 1fr; gap: 24px; width: min(100%, 1180px); margin: 0 auto; padding-top: 20px; border-top: 1px solid #d9d1c8; }
+.garment-details > p { margin: 2px 0 0; color: #7a857f; }
+.garment-details > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; color: #586b63; font-size: 13px; line-height: 1.4; }
+.garment-lightbox { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgb(15 32 27 / 76%); }
+.garment-lightbox img { max-width: min(100%, 620px); max-height: calc(100dvh - 48px); object-fit: contain; }
+.garment-lightbox__close { position: absolute; top: 20px; right: 24px; width: 40px; height: 40px; border: 0; background: transparent; color: #fff; cursor: pointer; font-size: 28px; font-weight: 300; }
+
+@media (max-width: 760px) { .garment-page { padding-right: 20px; padding-left: 20px; } .garment-nav { min-height: 68px; } .garment-detail { grid-template-columns: 1fr; gap: 34px; margin-top: 30px; } .garment-info h1 { font-size: 49px; } .garment-details { grid-template-columns: 1fr; } .garment-details > div { grid-template-columns: 1fr; gap: 9px; } }

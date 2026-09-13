@@ -8,6 +8,8 @@
 
 **A peer-to-peer platform for occasion wear with more life left to live.**
 
+**[✨ Open the visual landing page](https://multibear95.github.io/borrowed/demo/)**
+
 <p>
   <img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white">
   <img alt="React 19" src="https://img.shields.io/badge/React-19-087EA4?logo=react&logoColor=white">

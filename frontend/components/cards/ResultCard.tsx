@@ -38,7 +38,7 @@ function ResultCard({ hit, onReserve, disabled }: { disabled: boolean; hit: Sear
         <p className="result-card__price">€{garment.rental_price} · {garment.rental_days} days</p>
         {feasibility.lands_on && <span className="lands-pill">lands {fmtDay(feasibility.lands_on)}</span>}
         <div className="result-card__actions">
-          <Link href={`/garment/${encodeURIComponent(garment.id)}?wear=${encodeURIComponent(feasibility.wear_from)}&return=${feasibility.wear_to}&city=${encodeURIComponent(garment.city)}&sizes=${garment.sizes_eu.join(",")}`}>Details</Link>
+          <Link href={`/garment/${encodeURIComponent(garment.id)}?wear=${encodeURIComponent(feasibility.wear_from)}&return=${feasibility.wear_to}&city=${encodeURIComponent(garment.city)}&sizes=${garment.sizes_eu.join(",")}`} rel="noopener noreferrer" target="_blank">Details</Link>
           <button disabled={disabled} className="primary" onClick={() => onReserve(hit)} type="button">Reserve</button>
         </div>
       </div>

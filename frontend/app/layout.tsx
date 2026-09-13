@@ -5,7 +5,9 @@ export const metadata: Metadata = {
   title: "MORE THAN ONCE",
   description: "MORE THAN ONCE. Occasion wear with more life: borrow, lend, and share.",
   icons: {
-    icon: "/favicon.png",
+    icon: [{ url: "/favicon.png?v=20260913", type: "image/png", sizes: "512x512" }],
+    shortcut: "/favicon.png?v=20260913",
+    apple: "/favicon.png?v=20260913",
   },
 };
 
